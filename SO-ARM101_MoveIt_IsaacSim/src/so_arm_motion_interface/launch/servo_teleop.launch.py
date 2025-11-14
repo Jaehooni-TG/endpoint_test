@@ -66,6 +66,7 @@ def generate_launch_description() -> LaunchDescription:
     max_linear_speed = LaunchConfiguration("max_linear_speed")
     angular_gain = LaunchConfiguration("angular_gain")
     max_angular_speed = LaunchConfiguration("max_angular_speed")
+    command_in_ee = LaunchConfiguration("command_in_ee")
 
     pose_bridge = Node(
         package="so_arm_motion_interface",
@@ -79,6 +80,7 @@ def generate_launch_description() -> LaunchDescription:
             {"max_linear_speed": max_linear_speed},
             {"angular_gain": angular_gain},
             {"max_angular_speed": max_angular_speed},
+            {"command_in_ee": command_in_ee},
         ],
         output="screen",
     )
@@ -112,6 +114,7 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("max_linear_speed", default_value="1.2"),
             DeclareLaunchArgument("angular_gain", default_value="6.0"),
             DeclareLaunchArgument("max_angular_speed", default_value="3.0"),
+            DeclareLaunchArgument("command_in_ee", default_value="false"),
             demo_launch,
             servo_node,
             pose_bridge,

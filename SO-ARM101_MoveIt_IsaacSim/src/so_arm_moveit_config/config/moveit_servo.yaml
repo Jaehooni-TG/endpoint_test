@@ -24,7 +24,7 @@ is_primary_planning_scene_monitor: true
 move_group_name: arm
 planning_frame: base
 ee_frame_name: gripper
-robot_link_command_frame: gripper
+robot_link_command_frame: base
 
 # Halt behaviour
 incoming_command_timeout: 0.25  # 명령 중단시 자동 HALT/복구 동작을 위해 소폭 설정

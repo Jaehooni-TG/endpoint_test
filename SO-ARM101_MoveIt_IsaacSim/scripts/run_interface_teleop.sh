@@ -20,6 +20,9 @@ REF_FRAME=${REF_FRAME:-base}
 EE_FRAME=${EE_FRAME:-gripper}
 POSE_TOPIC=${POSE_TOPIC:-/so_arm/pose_cmd}
 AUTO_START=${AUTO_START:-true}
+# Command frame toggle for pose_to_servo (true: EE local frame, false: base frame)
+# Default: base frame for intuitive vertical motion
+CMD_IN_EE=${CMD_IN_EE:-false}
 # Default WS track should provide pose messages compatible with the bridge parser.
 # If your server uses a different channel/track, override WS_URL via env.
 WS_URL=${WS_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=left_arm&mode=bundle}
@@ -29,6 +32,7 @@ ros2 launch so_arm_motion_interface servo_teleop.launch.py \
   reference_frame:=$REF_FRAME \
   end_effector_frame:=$EE_FRAME \
   pose_topic:=$POSE_TOPIC \
+  command_in_ee:=$CMD_IN_EE \
   auto_start_servo:=$AUTO_START \
   >/tmp/so_arm_servo.log 2>&1 &
 SERVO_PID=$!
@@ -55,6 +59,10 @@ ros2 run so_arm_motion_interface websocket_pose_bridge_node \
     -p position_smoothing_alpha:=0.85 \
     -p orientation_smoothing_alpha:=0.85 \
     -p max_position_step:=0.15 \
+    -p enable_status_recovery:=true \
+    -p recovery_height_offset:=0.07 \
+    -p recovery_xy_offset:=0.05 \
+    -p recovery_yaw_offset_deg:=40.0 \
     -p ws_ping_interval:=0.0 \
     -p ws_ping_timeout:=0.0 \
     "${WS_ARGS[@]}" \

@@ -194,6 +194,7 @@ class WebsocketPoseBridge(Node):
         self._enforce_pos_limits = bool(self.get_parameter("enforce_position_limits").value)
         self._enforce_ori_limits = bool(self.get_parameter("enforce_orientation_limits").value)
         self._safe_zone_warned = False
+
         self._initial_status_message = {
             "type": "type_pose",
             "position": {
@@ -609,6 +610,8 @@ class WebsocketPoseBridge(Node):
             raise ValueError(f"Parameter '{name}' must contain exactly {size} values.")
 
         return values
+
+    # (position remap helpers removed during rollback)
 
     def _create_payload_from_list(self, values: list[float]) -> PosePayload:
         base_position = (float(values[0]), float(values[1]), float(values[2]))

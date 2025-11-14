@@ -35,6 +35,9 @@ class PoseToServoNode(Node):
         self.declare_parameter("end_effector_frame", "gripper")
         self.declare_parameter("linear_gain", 4.0)
         self.declare_parameter("max_linear_speed", 0.25)
+        # Toggle: command twist in EE(local) frame vs base(reference) frame
+        # Default: base frame for more intuitive vertical motion
+        self.declare_parameter("command_in_ee", False)
         self.declare_parameter("angular_gain", 2.0)
         self.declare_parameter("max_angular_speed", 1.5)
 
@@ -56,8 +59,10 @@ class PoseToServoNode(Node):
         self._max_angular = (
             self.get_parameter("max_angular_speed").get_parameter_value().double_value
         )
-        # MoveIt Servo 설정(robot_link_command_frame: gripper)에 맞춰 EE(local) 프레임으로 명령
-        self._command_in_ee = True
+        # MoveIt Servo 설정(robot_link_command_frame: gripper)에 맞춰 EE(local) 프레임으로 명령(토글 가능)
+        self._command_in_ee = (
+            self.get_parameter("command_in_ee").get_parameter_value().bool_value
+        )
 
         # Orientation tracking enabled (angular velocity from orientation error)
 
