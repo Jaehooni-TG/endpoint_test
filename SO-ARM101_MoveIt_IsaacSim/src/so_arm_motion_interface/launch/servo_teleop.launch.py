@@ -62,6 +62,10 @@ def generate_launch_description() -> LaunchDescription:
     reference_frame = LaunchConfiguration("reference_frame")
     ee_frame = LaunchConfiguration("end_effector_frame")
     auto_start = LaunchConfiguration("auto_start_servo")
+    linear_gain = LaunchConfiguration("linear_gain")
+    max_linear_speed = LaunchConfiguration("max_linear_speed")
+    angular_gain = LaunchConfiguration("angular_gain")
+    max_angular_speed = LaunchConfiguration("max_angular_speed")
 
     pose_bridge = Node(
         package="so_arm_motion_interface",
@@ -71,6 +75,10 @@ def generate_launch_description() -> LaunchDescription:
             {"servo_output_topic": "/servo_node/delta_twist_cmds"},
             {"reference_frame": reference_frame},
             {"end_effector_frame": ee_frame},
+            {"linear_gain": linear_gain},
+            {"max_linear_speed": max_linear_speed},
+            {"angular_gain": angular_gain},
+            {"max_angular_speed": max_angular_speed},
         ],
         output="screen",
     )
@@ -100,6 +108,10 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("reference_frame", default_value="base"),
             DeclareLaunchArgument("end_effector_frame", default_value="gripper"),
             DeclareLaunchArgument("auto_start_servo", default_value="true"),
+            DeclareLaunchArgument("linear_gain", default_value="10.0"),
+            DeclareLaunchArgument("max_linear_speed", default_value="1.2"),
+            DeclareLaunchArgument("angular_gain", default_value="6.0"),
+            DeclareLaunchArgument("max_angular_speed", default_value="3.0"),
             demo_launch,
             servo_node,
             pose_bridge,

@@ -20,6 +20,9 @@ REF_FRAME=${REF_FRAME:-base}
 EE_FRAME=${EE_FRAME:-gripper}
 POSE_TOPIC=${POSE_TOPIC:-/so_arm/pose_cmd}
 AUTO_START=${AUTO_START:-true}
+# Default WS track should provide pose messages compatible with the bridge parser.
+# If your server uses a different channel/track, override WS_URL via env.
+WS_URL=${WS_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=left_arm&mode=bundle}
 
 echo "[run] Launching MoveIt + Servo + pose_to_servo (frames: $REF_FRAME → $EE_FRAME)"
 ros2 launch so_arm_motion_interface servo_teleop.launch.py \
@@ -39,13 +42,22 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "[run] Starting WebSocket pose bridge → $POSE_TOPIC"
+WS_ARGS=()
+if [[ -n "$WS_URL" ]]; then
+  WS_ARGS+=("-p" "websocket_url:=$WS_URL")
+fi
+
 ros2 run so_arm_motion_interface websocket_pose_bridge_node \
   --ros-args \
     -p publish_topic:=$POSE_TOPIC \
     -p reference_frame:=$REF_FRAME \
     -p end_effector_frame:=$EE_FRAME \
-    -p ws_ping_interval_sec:=0.0 \
-    -p send_app_ping:=false \
+    -p position_smoothing_alpha:=0.85 \
+    -p orientation_smoothing_alpha:=0.85 \
+    -p max_position_step:=0.15 \
+    -p ws_ping_interval:=0.0 \
+    -p ws_ping_timeout:=0.0 \
+    "${WS_ARGS[@]}" \
   >/tmp/so_arm_ws_bridge.log 2>&1 &
 BRIDGE_PID=$!
 echo "[run] websocket_pose_bridge_node PID=$BRIDGE_PID (logs: /tmp/so_arm_ws_bridge.log)"

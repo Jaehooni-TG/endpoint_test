@@ -10,14 +10,15 @@ scale:
   joint: 3.0
 
 # Outgoing command properties
-publish_period: 0.008
+publish_period: 0.008  # 125 Hz
 low_latency_mode: true
 command_out_type: trajectory_msgs/JointTrajectory
 publish_joint_positions: true
 publish_joint_velocities: true
 publish_joint_accelerations: false
 smoothing_filter_plugin_name: "online_signal_smoothing::ButterworthFilterPlugin"
-is_primary_planning_scene_monitor: false
+# Use Servo's own planning scene monitor to ensure consistent scene/state
+is_primary_planning_scene_monitor: true
 
 # MoveIt frames/groups
 move_group_name: arm
@@ -26,7 +27,7 @@ ee_frame_name: gripper
 robot_link_command_frame: gripper
 
 # Halt behaviour
-incoming_command_timeout: 0.0  # 0.0이면 명령 타임아웃 체크 비활성화(안전장치 해제)
+incoming_command_timeout: 0.25  # 명령 중단시 자동 HALT/복구 동작을 위해 소폭 설정
 num_outgoing_halt_msgs_to_publish: 4
 
 # Singularities / joint limits
@@ -41,11 +42,11 @@ joint_command_in_topic: /servo_node/delta_joint_cmds
 joint_topic: /joint_states
 status_topic: /servo_node/status
 command_out_topic: /arm_controller/joint_trajectory
-status_publish_period: 0.1
+status_publish_period: 0.05
 
 # Collision checking
-check_collisions: true
+# 고성능 튜닝: 충돌검사 비활성화(시뮬에서만 권장). 안정화 후 true로 복귀 권장
+check_collisions: false
 collision_check_rate: 50.0
-# Relax collision proximity to reduce false halts (Status 5)
 self_collision_proximity_threshold: 0.02
 scene_collision_proximity_threshold: 0.02

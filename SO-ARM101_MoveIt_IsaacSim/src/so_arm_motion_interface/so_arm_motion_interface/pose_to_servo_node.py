@@ -15,7 +15,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile
 import tf2_ros
 from tf2_geometry_msgs import do_transform_pose
-from tf_transformations import quaternion_matrix
+from tf_transformations import quaternion_matrix, quaternion_conjugate, quaternion_multiply
 
 
 class PoseToServoNode(Node):
@@ -35,6 +35,8 @@ class PoseToServoNode(Node):
         self.declare_parameter("end_effector_frame", "gripper")
         self.declare_parameter("linear_gain", 4.0)
         self.declare_parameter("max_linear_speed", 0.25)
+        self.declare_parameter("angular_gain", 2.0)
+        self.declare_parameter("max_angular_speed", 1.5)
 
         input_topic = self.get_parameter("input_topic").get_parameter_value().string_value
         servo_output_topic = (
@@ -50,10 +52,14 @@ class PoseToServoNode(Node):
         self._max_linear = (
             self.get_parameter("max_linear_speed").get_parameter_value().double_value
         )
+        self._angular_gain = self.get_parameter("angular_gain").get_parameter_value().double_value
+        self._max_angular = (
+            self.get_parameter("max_angular_speed").get_parameter_value().double_value
+        )
         # MoveIt Servo 설정(robot_link_command_frame: gripper)에 맞춰 EE(local) 프레임으로 명령
         self._command_in_ee = True
 
-        # No special orientation mode/coupling in baseline
+        # Orientation tracking enabled (angular velocity from orientation error)
 
         qos = QoSProfile(depth=10)
         self._servo_pub = self.create_publisher(TwistStamped, servo_output_topic, qos)
@@ -106,7 +112,34 @@ class PoseToServoNode(Node):
         if linear_norm > self._max_linear > 0.0:
             linear_cmd *= self._max_linear / linear_norm
 
-        angular_cmd = np.array([0.0, 0.0, 0.0])
+        # Orientation error → angular velocity
+        tq = target_pose.pose.orientation
+        cq = current_tf.transform.rotation
+        # Use xyzw ordering for tf_transformations
+        q_target = np.array([tq.x, tq.y, tq.z, tq.w], dtype=float)
+        q_current = np.array([cq.x, cq.y, cq.z, cq.w], dtype=float)
+        # rotation bringing current -> target
+        q_err = quaternion_multiply(q_target, quaternion_conjugate(q_current))
+        # Ensure ndarray type for safe math operations
+        q_err = np.asarray(q_err, dtype=float)
+        # Ensure sign consistency for shortest path
+        if q_err[3] < 0.0:
+            q_err = -q_err
+        w = float(q_err[3])
+        w = max(min(w, 1.0), -1.0)
+        angle = 2.0 * math.acos(w)
+        s = math.sqrt(max(1.0 - w * w, 0.0))
+        if s < 1e-6 or angle < 1e-6:
+            axis = np.array([0.0, 0.0, 0.0], dtype=float)
+        else:
+            axis = (q_err[0:3] / s).astype(float, copy=False)
+        angular_error = axis * angle
+        raw_angular_cmd = self._angular_gain * angular_error
+        ang_norm = float(np.linalg.norm(raw_angular_cmd))
+        if ang_norm > self._max_angular > 0.0:
+            angular_cmd = raw_angular_cmd * (self._max_angular / ang_norm)
+        else:
+            angular_cmd = raw_angular_cmd
 
         # Optionally express commanded twist in EE(local) frame
         if self._command_in_ee:

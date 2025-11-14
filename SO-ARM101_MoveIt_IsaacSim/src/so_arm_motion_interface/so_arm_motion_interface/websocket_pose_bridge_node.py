@@ -531,6 +531,7 @@ class WebsocketPoseBridge(Node):
         )
 
     async def _send_json_message(self, ws: WebSocketClientProtocol, message: Dict[str, Any]) -> None:
+        # Send as UTF-8 encoded JSON bytes (binary frame) per project convention.
         payload = json.dumps(message).encode("utf-8")
         if self._send_lock is not None:
             async with self._send_lock:
@@ -850,16 +851,26 @@ class WebsocketPoseBridge(Node):
 
 def main() -> None:
     rclpy.init()
+    node: Optional[WebsocketPoseBridge] = None
     try:
         node = WebsocketPoseBridge()
-    except Exception as exc:
-        rclpy.shutdown()
-        raise
-    try:
-        rclpy.spin(node)
+        try:
+            rclpy.spin(node)
+        except rclpy.executors.ExternalShutdownException:
+            # Another thread (e.g., TF listener) requested shutdown; ignore.
+            pass
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        if node is not None:
+            try:
+                node.destroy_node()
+            except Exception:
+                pass
+        # Guard against double shutdown when another thread already called it
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
