@@ -217,12 +217,91 @@ ros2 launch so_arm_moveit_config demo.launch.py
 
 ```
 ├── src/
-│   ├── so_arm_description/     # Robot URDF and meshes
-│   ├── so_arm_moveit_config/   # MoveIt configuration
-│   └── isaac_sim_usd/          # Isaac Sim USD files
+│   ├── so_arm_description/       # Robot URDF and meshes
+│   ├── so_arm_moveit_config/     # MoveIt configuration
+│   └── isaac_sim_usd/            # Isaac Sim USD files
 ├── README.md
 └── .gitignore
 ```
+
+## Web Teleoperation & Coordinate Frames
+
+The repo includes nodes to teleoperate SO‑ARM101 from a web UI via WebSocket.  
+This section documents the coordinate conventions and ROS topics involved.
+
+### Web → ROS: Pose commands
+
+- Node: `so_arm_motion_interface/websocket_pose_bridge_node.py`
+- Default WebSocket URL (can be overridden via `WS_URL` in `scripts/run_interface_teleop.sh`):
+  - `ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=left_arm&mode=bundle`
+- Incoming messages:
+  - JSON pose bundles (position + quaternion) in a **web frame**.
+  - The node normalizes several JSON formats into a single internal pose representation.
+- Outgoing ROS message:
+  - Topic: `/so_arm/pose_cmd` (`geometry_msgs/PoseStamped`)
+  - Frame: `base` (parameter `reference_frame`, default `base`)
+
+#### Position frame mapping
+
+Let `(x_w, y_w, z_w)` be the position from the web client, and `(x_b, y_b, z_b)` the pose published in the robot `base` frame.  
+The bridge applies this fixed mapping:
+
+- `x_b = -z_w`
+- `y_b = -x_w`
+- `z_b =  y_w`
+
+Intuitively:
+
+- Web +X → robot −Y  
+- Web +Y → robot +Z  
+- Web +Z → robot −X
+
+This matches the user’s camera view with the SO‑ARM base frame used in RViz/Isaac.
+
+#### Orientation mapping
+
+- Web sends orientation as quaternion `(x_w, y_w, z_w, w_w)` (or compatible layouts).
+- The bridge multiplies by a fixed transform quaternion (parameter `transform_quaternion`, default `[0.5, 0.5, -0.5, -0.5]`, interpreted as `w,x,y,z`) to align the web frame with the robot `base` frame:
+  - `q_base = q_transform ⊗ q_web`
+- Optionally, when `use_web_z_as_yaw=true`, only the web Z‑axis rotation (yaw) is used and web roll/pitch are ignored before the transform.
+- The resulting quaternion `q_base` is written directly into `PoseStamped.pose.orientation` on `/so_arm/pose_cmd`.
+
+### Web → ROS: Joint jog shortcuts
+
+To make some web gestures act as direct joint jogs (instead of full Cartesian pose control), the bridge also publishes `JointJog` commands:
+
+- Base rotation:
+  - Enabled when `map_web_z_to_rotation_joint=true` (default).
+  - Uses the web Z value to send `JointJog` on:
+    - `joint_names = ["Rotation"]`
+    - `velocities = [rotation_joint_gain * web_z]`
+  - Topic: `/servo_node/delta_joint_cmds`
+- Wrist pitch (experimental, for gripper “nodding”):
+  - Enabled when `map_web_pitch_to_wrist_joint=true`.
+  - Uses the web pitch angle (after web→base alignment) to send `JointJog` on:
+    - `joint_names = ["Wrist_Pitch"]`
+    - `velocities = [wrist_pitch_joint_gain * pitch_web]`
+  - Topic: `/servo_node/delta_joint_cmds`
+
+These joint jogs are additive to MoveIt Servo’s Cartesian control and can be tuned via:
+
+- Parameters in `websocket_pose_bridge_node.py`
+- Environment variable `WRIST_PITCH_JOINT_GAIN` in `scripts/run_interface_teleop.sh`
+
+### ROS → Web: Feedback streams
+
+`scripts/run_interface_teleop.sh` also starts bridges for streaming robot state back to the web UI:
+
+- Joint state bridge:
+  - Node: `so_arm_motion_interface/websocket_joint_state_bridge_node.py`
+  - Subscribes: `/joint_states`
+  - Publishes joint arrays over WebSocket to the `robot_joint_states` track.
+- Image bridge (overhead camera):
+  - Node: `so_arm_motion_interface/websocket_image_bridge_node.py`
+  - Subscribes: `/so_arm/overhead_camera/image_raw`
+  - Encodes frames (JPEG or H.264, see script parameters) and sends binary WebSocket frames to the `head_camera` track.
+
+All of these components are wired up in `scripts/run_interface_teleop.sh`, which is the recommended entry point for running MoveIt Servo + web teleop + Isaac Sim together.
 
 ## License
 
