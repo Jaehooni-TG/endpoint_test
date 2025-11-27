@@ -19,12 +19,10 @@ setup(
     zip_safe=True,
     maintainer='teamgrit',
     maintainer_email='jhs10429@teamgrit.kr',
-    description='Custom planar IK + joint control for SO-ARM101, fed by web Pose',
+    description='(Deprecated) Custom planar IK + joint control for SO-ARM101, fed by web Pose',
     license='MIT',
     entry_points={
-        'console_scripts': [
-            'custom_ik_controller_node = so_arm_custom_control.custom_ik_controller_node:main',
-        ],
+        # console_scripts left intentionally empty: custom IK controller is not used anymore
+        'console_scripts': [],
     },
 )
-

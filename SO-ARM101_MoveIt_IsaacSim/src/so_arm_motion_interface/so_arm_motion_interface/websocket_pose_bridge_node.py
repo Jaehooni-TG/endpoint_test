@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 
 import rclpy
 from geometry_msgs.msg import PoseStamped
+from control_msgs.msg import JointJog
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
@@ -126,6 +127,9 @@ class WebsocketPoseBridge(Node):
         self.declare_parameter("ack_enabled", True)
         self.declare_parameter("reconnect_delay", 3.0)
         self.declare_parameter("transform_quaternion", [0.5, 0.5, -0.5, -0.5])  # w, x, y, z
+        # If true, treat web Z-rotation as yaw and ignore web roll/pitch
+        # Disabled by default; previous experiment only.
+        self.declare_parameter("use_web_z_as_yaw", False)
         self.declare_parameter("initial_pose", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
         self.declare_parameter("status_publish_period", 0.2)
         # WebSocket keepalive settings (set interval<=0 to disable pings)
@@ -134,21 +138,49 @@ class WebsocketPoseBridge(Node):
         self.declare_parameter("tf_lookup_timeout", 0.5)
         self.declare_parameter("tf_retry_period", 1.0)
         self.declare_parameter("feedback_topic", "/so_arm/pose_state")
-        # Make the bridge more responsive by default
-        self.declare_parameter("position_smoothing_alpha", 0.97)
-        self.declare_parameter("orientation_smoothing_alpha", 0.93)
-        self.declare_parameter("max_position_step", 0.10)
+        # Moderately responsive defaults (roll back from aggressive tuning)
+        self.declare_parameter("position_smoothing_alpha", 0.99)
+        self.declare_parameter("orientation_smoothing_alpha", 0.97)
+        self.declare_parameter("max_position_step", 1.0)
         self.declare_parameter("max_orientation_step", 1.0)
         self.declare_parameter("enable_status_recovery", True)
+        # Optional decoupling of position / orientation updates:
+        # - pure position change  → translate only (keep last orientation)
+        # - pure orientation change → rotate only (keep last position)
+        # Disabled by default; kept for experimentation only.
+        self.declare_parameter("decouple_pos_orientation", False)
+        self.declare_parameter("position_change_threshold", 1e-4)
+        self.declare_parameter("orientation_change_threshold_deg", 0.5)
+        # Map web Z-axis input directly to a joint jog on the base "Rotation" joint.
+        # This provides a simple way to spin the base without affecting Cartesian pose.
+        self.declare_parameter("map_web_z_to_rotation_joint", True)
+        self.declare_parameter("rotation_joint_name", "Rotation")
+        self.declare_parameter("rotation_joint_gain", 2.0)  # rad/s per unit web-Z
+        self.declare_parameter("rotation_joint_max_speed", 1.0)  # rad/s
+        self.declare_parameter("rotation_joint_deadband", 1e-3)
+        self.declare_parameter("rotation_joint_command_topic", "/servo_node/delta_joint_cmds")
+        # Optional: map web orientation pitch to a wrist joint jog for direct wrist control.
+        self.declare_parameter("map_web_pitch_to_wrist_joint", True)
+        self.declare_parameter("wrist_pitch_joint_name", "Wrist_Pitch")
+        self.declare_parameter("wrist_pitch_joint_gain", 1.5)  # rad/s per rad web-pitch
+        self.declare_parameter("wrist_pitch_joint_max_speed", 1.0)  # rad/s
+        self.declare_parameter("wrist_pitch_joint_deadband", 0.02)  # rad
+        self.declare_parameter("wrist_pitch_command_topic", "/servo_node/delta_joint_cmds")
         self.declare_parameter("recovery_pose", [0.05, 0.0, 0.2, 0.0, 0.0, 0.0, 1.0])
         self.declare_parameter("recovery_interval", 2.0)
         self.declare_parameter("recovery_height_offset", 0.05)
         self.declare_parameter("recovery_xy_offset", 0.03)
         self.declare_parameter("recovery_yaw_offset_deg", 25.0)
-        self.declare_parameter("position_limits", [-0.4, 0.4, -0.3, 0.3, 0.02, 0.6])
-        self.declare_parameter("orientation_limits_deg", [150.0, 120.0, 170.0])
+        # Workspace limits: [min_x, max_x, min_y, max_y, min_z, max_z] in meters (base frame)
+        # User preference:
+        #   x: [-0.3, 0.3]
+        #   y: [-0.25, 0.35]
+        #   z: [ 0.02, 0.45]
+        self.declare_parameter("position_limits", [-0.3, 0.3, -0.25, 0.35, 0.02, 0.45])
+        # Do not enforce any rotational limits by default
+        self.declare_parameter("orientation_limits_deg", [0.0, 0.0, 0.0])
         self.declare_parameter("enforce_position_limits", True)
-        self.declare_parameter("enforce_orientation_limits", True)
+        self.declare_parameter("enforce_orientation_limits", False)
 
         url = self.get_parameter("websocket_url").get_parameter_value().string_value
         if not url:
@@ -166,6 +198,7 @@ class WebsocketPoseBridge(Node):
             self._transform_quaternion[3],
             self._transform_quaternion[0],
         )
+        self._use_web_z_as_yaw = bool(self.get_parameter("use_web_z_as_yaw").value)
         self._initial_pose = self._parse_vector_param("initial_pose", 7)
         self._status_period = max(
             0.0,
@@ -194,6 +227,63 @@ class WebsocketPoseBridge(Node):
         self._enforce_pos_limits = bool(self.get_parameter("enforce_position_limits").value)
         self._enforce_ori_limits = bool(self.get_parameter("enforce_orientation_limits").value)
         self._safe_zone_warned = False
+
+        self._decouple_pos_orientation = bool(
+            self.get_parameter("decouple_pos_orientation").value
+        )
+        self._pos_change_threshold = max(
+            0.0, float(self.get_parameter("position_change_threshold").value)
+        )
+        self._ori_change_threshold = math.radians(
+            max(0.0, float(self.get_parameter("orientation_change_threshold_deg").value))
+        )
+
+        self._map_web_z_to_rotation_joint = bool(
+            self.get_parameter("map_web_z_to_rotation_joint").value
+        )
+        self._rotation_joint_name = (
+            self.get_parameter("rotation_joint_name").get_parameter_value().string_value
+        )
+        self._rotation_joint_gain = float(self.get_parameter("rotation_joint_gain").value)
+        self._rotation_joint_max_speed = abs(
+            float(self.get_parameter("rotation_joint_max_speed").value)
+        )
+        self._rotation_joint_deadband = max(
+            0.0, float(self.get_parameter("rotation_joint_deadband").value)
+        )
+        rotation_cmd_topic = (
+            self.get_parameter("rotation_joint_command_topic").get_parameter_value().string_value
+        )
+        self._rotation_joint_pub = None
+        if self._map_web_z_to_rotation_joint:
+            self._rotation_joint_pub = self.create_publisher(
+                JointJog, rotation_cmd_topic, QoSProfile(depth=10)
+            )
+        self._last_web_z: Optional[float] = None
+
+        # Wrist pitch jog mapping from web orientation pitch
+        self._map_web_pitch_to_wrist_joint = bool(
+            self.get_parameter("map_web_pitch_to_wrist_joint").value
+        )
+        self._wrist_joint_name = (
+            self.get_parameter("wrist_pitch_joint_name").get_parameter_value().string_value
+        )
+        self._wrist_joint_gain = float(self.get_parameter("wrist_pitch_joint_gain").value)
+        self._wrist_joint_max_speed = abs(
+            float(self.get_parameter("wrist_pitch_joint_max_speed").value)
+        )
+        self._wrist_joint_deadband = max(
+            0.0, float(self.get_parameter("wrist_pitch_joint_deadband").value)
+        )
+        wrist_cmd_topic = (
+            self.get_parameter("wrist_pitch_command_topic").get_parameter_value().string_value
+        )
+        self._wrist_joint_pub = None
+        if self._map_web_pitch_to_wrist_joint:
+            self._wrist_joint_pub = self.create_publisher(
+                JointJog, wrist_cmd_topic, QoSProfile(depth=10)
+            )
+        self._last_web_pitch: Optional[float] = None
 
         self._initial_status_message = {
             "type": "type_pose",
@@ -363,9 +453,13 @@ class WebsocketPoseBridge(Node):
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = pose_payload.frame_id or self._reference_frame
 
-        px = -pose_payload.position["z"]
-        py = -pose_payload.position["x"]
-        pz = pose_payload.position["y"]
+        web_x = float(pose_payload.position["x"])
+        web_y = float(pose_payload.position["y"])
+        web_z = float(pose_payload.position["z"])
+
+        px = -web_z
+        py = -web_x
+        pz = web_y
         msg.pose.position.x = px
         msg.pose.position.y = py
         msg.pose.position.z = pz
@@ -377,10 +471,65 @@ class WebsocketPoseBridge(Node):
             pose_payload.orientation["w"],
         )
 
-        base_quat_xyzw = quaternion_multiply(self._transform_quaternion_xyzw, web_quat_xyzw)
-        base_quat_xyzw = tuple(float(v) for v in base_quat_xyzw)
+        # Optional joint jog mappings driven directly from web input:
+        if self._map_web_z_to_rotation_joint and self._rotation_joint_pub is not None:
+            self._maybe_publish_rotation_joint_jog(web_z)
+        # Decompose web orientation once into roll/pitch/yaw
+        roll_w, pitch_w, yaw_w = euler_from_quaternion(web_quat_xyzw)
+        if self._map_web_pitch_to_wrist_joint and self._wrist_joint_pub is not None:
+            # Use web pitch (middle element) in XYZ (roll, pitch, yaw) to drive wrist joint.
+            self._maybe_publish_wrist_pitch_jog(pitch_w)
 
-        base_position = self._filter_position((px, py, pz))
+        if self._use_web_z_as_yaw:
+            # Extract yaw around web Z axis and ignore web roll/pitch so that
+            # “Z-rotation” on the web side maps cleanly to yaw on the robot side.
+            yaw_only_web = quaternion_from_euler(0.0, 0.0, yaw_w)
+            base_quat_xyzw = quaternion_multiply(self._transform_quaternion_xyzw, yaw_only_web)
+        else:
+            # When mapping web pitch to a wrist joint, do not also feed that
+            # pitch component into the EE pose target; otherwise Servo will
+            # try to satisfy it via elbow/shoulder. Instead, keep only roll/yaw
+            # in the EE orientation and let the wrist JointJog handle pitch.
+            if self._map_web_pitch_to_wrist_joint:
+                quat_no_pitch = quaternion_from_euler(roll_w, 0.0, yaw_w)
+                base_quat_xyzw = quaternion_multiply(
+                    self._transform_quaternion_xyzw, quat_no_pitch
+                )
+            else:
+                base_quat_xyzw = quaternion_multiply(
+                    self._transform_quaternion_xyzw, web_quat_xyzw
+                )
+        base_quat_xyzw = tuple(float(v) for v in base_quat_xyzw)
+        base_position = (px, py, pz)
+
+        # Optionally decouple pure position vs pure orientation changes:
+        # - If only position changed → update position, keep last orientation.
+        # - If only orientation changed → update orientation, keep last position.
+        if (
+            self._decouple_pos_orientation
+            and self._last_base_position is not None
+            and self._last_base_quat is not None
+        ):
+            dx = base_position[0] - self._last_base_position[0]
+            dy = base_position[1] - self._last_base_position[1]
+            dz = base_position[2] - self._last_base_position[2]
+            pos_delta = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+            dot = sum(a * b for a, b in zip(self._last_base_quat, base_quat_xyzw))
+            dot = max(min(dot, 1.0), -1.0)
+            ori_angle = 2.0 * math.acos(dot)
+
+            pos_changed = pos_delta > self._pos_change_threshold
+            ori_changed = ori_angle > self._ori_change_threshold
+
+            if pos_changed and not ori_changed:
+                # Pure translation command: ignore small orientation change/noise.
+                base_quat_xyzw = self._last_base_quat
+            elif ori_changed and not pos_changed:
+                # Pure rotation command: keep position fixed.
+                base_position = self._last_base_position
+
+        base_position = self._filter_position(base_position)
         base_quat_xyzw = self._filter_orientation(base_quat_xyzw)
         base_position, base_quat_xyzw = self._enforce_safe_zone(base_position, base_quat_xyzw)
 
@@ -406,6 +555,52 @@ class WebsocketPoseBridge(Node):
         self._last_base_position = base_position
         self._last_base_quat = base_quat_xyzw
         return base_position, base_quat_xyzw
+
+    def _maybe_publish_rotation_joint_jog(self, web_z: float) -> None:
+        if self._rotation_joint_pub is None:
+            return
+
+        vel = self._rotation_joint_gain * web_z
+        if abs(vel) < self._rotation_joint_deadband:
+            self._last_web_z = web_z
+            return
+
+        if self._rotation_joint_max_speed > 0.0 and abs(vel) > self._rotation_joint_max_speed:
+            vel = math.copysign(self._rotation_joint_max_speed, vel)
+
+        jog = JointJog()
+        jog.header.stamp = self.get_clock().now().to_msg()
+        jog.header.frame_id = ""
+        jog.joint_names = [self._rotation_joint_name]
+        jog.displacements = []
+        jog.velocities = [vel]
+        jog.duration = 0.2
+
+        self._rotation_joint_pub.publish(jog)
+        self._last_web_z = web_z
+
+    def _maybe_publish_wrist_pitch_jog(self, web_pitch: float) -> None:
+        if self._wrist_joint_pub is None:
+            return
+
+        vel = self._wrist_joint_gain * web_pitch
+        if abs(vel) < self._wrist_joint_deadband:
+            self._last_web_pitch = web_pitch
+            return
+
+        if self._wrist_joint_max_speed > 0.0 and abs(vel) > self._wrist_joint_max_speed:
+            vel = math.copysign(self._wrist_joint_max_speed, vel)
+
+        jog = JointJog()
+        jog.header.stamp = self.get_clock().now().to_msg()
+        jog.header.frame_id = ""
+        jog.joint_names = [self._wrist_joint_name]
+        jog.displacements = []
+        jog.velocities = [vel]
+        jog.duration = 0.2
+
+        self._wrist_joint_pub.publish(jog)
+        self._last_web_pitch = web_pitch
 
     async def _send_ack(
         self,
@@ -643,7 +838,8 @@ class WebsocketPoseBridge(Node):
             return
 
         code = int(msg.data)
-        if code in (2, 3, 4, 5):
+        # Auto-recover only on singularity halt (2) or joint-bound halt (5)
+        if code in (2, 5):
             now = self.get_clock().now()
             if (
                 self._last_recovery_time is None

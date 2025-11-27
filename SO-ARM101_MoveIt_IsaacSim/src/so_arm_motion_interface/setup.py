@@ -23,9 +23,15 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
+            'websocket_image_bridge_node = so_arm_motion_interface.websocket_image_bridge_node:main',
             'twist_to_servo_node = so_arm_motion_interface.twist_to_servo_node:main',
             'pose_to_servo_node = so_arm_motion_interface.pose_to_servo_node:main',
+            'pose_to_joint_trajectory_node = so_arm_motion_interface.pose_to_joint_trajectory_node:main',
             'websocket_pose_bridge_node = so_arm_motion_interface.websocket_pose_bridge_node:main',
+            'websocket_joint_state_bridge_node = so_arm_motion_interface.websocket_joint_state_bridge_node:main',
+            'joint_limit_recovery_node = so_arm_motion_interface.joint_limit_recovery_node:main',
+            'enable_servo_orientation_drift_node = so_arm_motion_interface.enable_servo_orientation_drift_node:main',
+            'z_height_joint_controller_node = so_arm_motion_interface.z_height_joint_controller_node:main',
                     ],
     },
 )

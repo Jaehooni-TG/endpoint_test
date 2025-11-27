@@ -67,6 +67,12 @@ def generate_launch_description() -> LaunchDescription:
     angular_gain = LaunchConfiguration("angular_gain")
     max_angular_speed = LaunchConfiguration("max_angular_speed")
     command_in_ee = LaunchConfiguration("command_in_ee")
+    enable_orientation_control = LaunchConfiguration("enable_orientation_control")
+    orientation_only_joint = LaunchConfiguration("orientation_only_joint_name")
+    orientation_only_pos_thresh = LaunchConfiguration("orientation_only_pos_threshold")
+    orientation_only_angle_thresh = LaunchConfiguration("orientation_only_angle_threshold_deg")
+    orientation_only_gain = LaunchConfiguration("orientation_only_gain")
+    orientation_only_max_speed = LaunchConfiguration("orientation_only_max_speed")
 
     pose_bridge = Node(
         package="so_arm_motion_interface",
@@ -81,6 +87,12 @@ def generate_launch_description() -> LaunchDescription:
             {"angular_gain": angular_gain},
             {"max_angular_speed": max_angular_speed},
             {"command_in_ee": command_in_ee},
+            {"enable_orientation_control": enable_orientation_control},
+            {"orientation_only_joint_name": orientation_only_joint},
+            {"orientation_only_pos_threshold": orientation_only_pos_thresh},
+            {"orientation_only_angle_threshold_deg": orientation_only_angle_thresh},
+            {"orientation_only_gain": orientation_only_gain},
+            {"orientation_only_max_speed": orientation_only_max_speed},
         ],
         output="screen",
     )
@@ -109,12 +121,23 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("pose_topic", default_value="/so_arm/pose_cmd"),
             DeclareLaunchArgument("reference_frame", default_value="base"),
             DeclareLaunchArgument("end_effector_frame", default_value="gripper"),
-            DeclareLaunchArgument("auto_start_servo", default_value="true"),
-            DeclareLaunchArgument("linear_gain", default_value="10.0"),
-            DeclareLaunchArgument("max_linear_speed", default_value="1.2"),
-            DeclareLaunchArgument("angular_gain", default_value="6.0"),
-            DeclareLaunchArgument("max_angular_speed", default_value="3.0"),
+            # Disable auto-start so we can move to a ready pose first, then trigger start_servo manually.
+            DeclareLaunchArgument("auto_start_servo", default_value="false"),
+            DeclareLaunchArgument("linear_gain", default_value="12.0"),
+            DeclareLaunchArgument("max_linear_speed", default_value="1.5"),
+            # Orientation defaults (rollback to original)
+            DeclareLaunchArgument("angular_gain", default_value="3.0"),
+            DeclareLaunchArgument("max_angular_speed", default_value="2.0"),
             DeclareLaunchArgument("command_in_ee", default_value="false"),
+            # Orientation control disabled by default for teleop; rotations are
+            # expected to be handled via JointJog (e.g., Rotation/Wrist_Pitch).
+            DeclareLaunchArgument("enable_orientation_control", default_value="false"),
+            DeclareLaunchArgument("orientation_only_joint_name", default_value="Wrist_Pitch"),
+            DeclareLaunchArgument("orientation_only_pos_threshold", default_value="0.001"),
+            # Deadband for orientation-only joint jog. Default 0: any pure orientation change triggers.
+            DeclareLaunchArgument("orientation_only_angle_threshold_deg", default_value="0.0"),
+            DeclareLaunchArgument("orientation_only_gain", default_value="1.0"),
+            DeclareLaunchArgument("orientation_only_max_speed", default_value="1.0"),
             demo_launch,
             servo_node,
             pose_bridge,
