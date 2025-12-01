@@ -24,7 +24,6 @@ set -euo pipefail
 #   IMAGE_MAX_HEIGHT=720
 #   IMAGE_BITRATE=4000000                      # bits/s
 #   IMAGE_H264_CODEC_STRING=avc1.42E03C        # advertised codec string
-#   WRIST_PITCH_JOINT_GAIN=-1.5                # rad/s per rad web-pitch (sign controls direction)
 
 REF_FRAME=${REF_FRAME:-base}
 EE_FRAME=${EE_FRAME:-gripper}
@@ -32,11 +31,11 @@ POSE_TOPIC=${POSE_TOPIC:-/so_arm/pose_cmd}
 AUTO_START=${AUTO_START:-false}
 # Tuning knobs (env-overridable)
 # Linear path (more aggressive: faster convergence / travel)
-LIN_GAIN=${LIN_GAIN:-32.0}
-MAX_LIN_SPEED=${MAX_LIN_SPEED:-2.8}
+LIN_GAIN=${LIN_GAIN:-24.0}
+MAX_LIN_SPEED=${MAX_LIN_SPEED:-6.0}
 # Angular path (still secondary, but snappier)
-ANG_GAIN=${ANG_GAIN:-0.5}
-MAX_ANG_SPEED=${MAX_ANG_SPEED:-1.2}
+ANG_GAIN=${ANG_GAIN:-24.0}
+MAX_ANG_SPEED=${MAX_ANG_SPEED:-6.0}
 # Bridge smoothing/step (higher responsiveness, less filtering)
 POS_ALPHA=${POS_ALPHA:-0.92}
 ORI_ALPHA=${ORI_ALPHA:-0.85}
@@ -60,7 +59,6 @@ IMAGE_MAX_HEIGHT=${IMAGE_MAX_HEIGHT:-720}
 IMAGE_BITRATE=${IMAGE_BITRATE:-4000000}
 IMAGE_H264_CODEC_STRING=${IMAGE_H264_CODEC_STRING:-avc1.42E03C}
 IMAGE_BRIDGE_ENABLE=${IMAGE_BRIDGE_ENABLE:-true}
-WRIST_PITCH_JOINT_GAIN=${WRIST_PITCH_JOINT_GAIN:--1.5}
 # Ready-pose automation: comma-separated 5 joint values (Rotation,Pitch,Elbow,Wrist_Pitch,Wrist_Roll)
 READY_POSE=${READY_POSE:-0.0,0.1,0.7,0.5,0.0}
 READY_POSE_TIME_SEC=${READY_POSE_TIME_SEC:-2}
@@ -155,7 +153,6 @@ ros2 run so_arm_motion_interface websocket_pose_bridge_node \
     -p max_orientation_step:=$MAX_ORI_STEP \
     -p ws_ping_interval:=0.0 \
     -p ws_ping_timeout:=0.0 \
-    -p wrist_pitch_joint_gain:=$WRIST_PITCH_JOINT_GAIN \
     "${WS_ARGS[@]}" \
   >/tmp/so_arm_ws_bridge.log 2>&1 &
 BRIDGE_PID=$!

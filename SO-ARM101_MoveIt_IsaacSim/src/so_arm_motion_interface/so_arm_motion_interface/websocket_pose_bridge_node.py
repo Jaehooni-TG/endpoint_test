@@ -159,13 +159,6 @@ class WebsocketPoseBridge(Node):
         self.declare_parameter("rotation_joint_max_speed", 1.0)  # rad/s
         self.declare_parameter("rotation_joint_deadband", 1e-3)
         self.declare_parameter("rotation_joint_command_topic", "/servo_node/delta_joint_cmds")
-        # Optional: map web orientation pitch to a wrist joint jog for direct wrist control.
-        self.declare_parameter("map_web_pitch_to_wrist_joint", True)
-        self.declare_parameter("wrist_pitch_joint_name", "Wrist_Pitch")
-        self.declare_parameter("wrist_pitch_joint_gain", 1.5)  # rad/s per rad web-pitch
-        self.declare_parameter("wrist_pitch_joint_max_speed", 1.0)  # rad/s
-        self.declare_parameter("wrist_pitch_joint_deadband", 0.02)  # rad
-        self.declare_parameter("wrist_pitch_command_topic", "/servo_node/delta_joint_cmds")
         self.declare_parameter("recovery_pose", [0.05, 0.0, 0.2, 0.0, 0.0, 0.0, 1.0])
         self.declare_parameter("recovery_interval", 2.0)
         self.declare_parameter("recovery_height_offset", 0.05)
@@ -260,30 +253,6 @@ class WebsocketPoseBridge(Node):
                 JointJog, rotation_cmd_topic, QoSProfile(depth=10)
             )
         self._last_web_z: Optional[float] = None
-
-        # Wrist pitch jog mapping from web orientation pitch
-        self._map_web_pitch_to_wrist_joint = bool(
-            self.get_parameter("map_web_pitch_to_wrist_joint").value
-        )
-        self._wrist_joint_name = (
-            self.get_parameter("wrist_pitch_joint_name").get_parameter_value().string_value
-        )
-        self._wrist_joint_gain = float(self.get_parameter("wrist_pitch_joint_gain").value)
-        self._wrist_joint_max_speed = abs(
-            float(self.get_parameter("wrist_pitch_joint_max_speed").value)
-        )
-        self._wrist_joint_deadband = max(
-            0.0, float(self.get_parameter("wrist_pitch_joint_deadband").value)
-        )
-        wrist_cmd_topic = (
-            self.get_parameter("wrist_pitch_command_topic").get_parameter_value().string_value
-        )
-        self._wrist_joint_pub = None
-        if self._map_web_pitch_to_wrist_joint:
-            self._wrist_joint_pub = self.create_publisher(
-                JointJog, wrist_cmd_topic, QoSProfile(depth=10)
-            )
-        self._last_web_pitch: Optional[float] = None
 
         self._initial_status_message = {
             "type": "type_pose",
@@ -471,34 +440,20 @@ class WebsocketPoseBridge(Node):
             pose_payload.orientation["w"],
         )
 
-        # Optional joint jog mappings driven directly from web input:
+        # Optional joint jog mapping driven directly from web input:
         if self._map_web_z_to_rotation_joint and self._rotation_joint_pub is not None:
             self._maybe_publish_rotation_joint_jog(web_z)
         # Decompose web orientation once into roll/pitch/yaw
         roll_w, pitch_w, yaw_w = euler_from_quaternion(web_quat_xyzw)
-        if self._map_web_pitch_to_wrist_joint and self._wrist_joint_pub is not None:
-            # Use web pitch (middle element) in XYZ (roll, pitch, yaw) to drive wrist joint.
-            self._maybe_publish_wrist_pitch_jog(pitch_w)
-
         if self._use_web_z_as_yaw:
             # Extract yaw around web Z axis and ignore web roll/pitch so that
             # “Z-rotation” on the web side maps cleanly to yaw on the robot side.
             yaw_only_web = quaternion_from_euler(0.0, 0.0, yaw_w)
             base_quat_xyzw = quaternion_multiply(self._transform_quaternion_xyzw, yaw_only_web)
         else:
-            # When mapping web pitch to a wrist joint, do not also feed that
-            # pitch component into the EE pose target; otherwise Servo will
-            # try to satisfy it via elbow/shoulder. Instead, keep only roll/yaw
-            # in the EE orientation and let the wrist JointJog handle pitch.
-            if self._map_web_pitch_to_wrist_joint:
-                quat_no_pitch = quaternion_from_euler(roll_w, 0.0, yaw_w)
-                base_quat_xyzw = quaternion_multiply(
-                    self._transform_quaternion_xyzw, quat_no_pitch
-                )
-            else:
-                base_quat_xyzw = quaternion_multiply(
-                    self._transform_quaternion_xyzw, web_quat_xyzw
-                )
+            base_quat_xyzw = quaternion_multiply(
+                self._transform_quaternion_xyzw, web_quat_xyzw
+            )
         base_quat_xyzw = tuple(float(v) for v in base_quat_xyzw)
         base_position = (px, py, pz)
 
@@ -578,29 +533,6 @@ class WebsocketPoseBridge(Node):
 
         self._rotation_joint_pub.publish(jog)
         self._last_web_z = web_z
-
-    def _maybe_publish_wrist_pitch_jog(self, web_pitch: float) -> None:
-        if self._wrist_joint_pub is None:
-            return
-
-        vel = self._wrist_joint_gain * web_pitch
-        if abs(vel) < self._wrist_joint_deadband:
-            self._last_web_pitch = web_pitch
-            return
-
-        if self._wrist_joint_max_speed > 0.0 and abs(vel) > self._wrist_joint_max_speed:
-            vel = math.copysign(self._wrist_joint_max_speed, vel)
-
-        jog = JointJog()
-        jog.header.stamp = self.get_clock().now().to_msg()
-        jog.header.frame_id = ""
-        jog.joint_names = [self._wrist_joint_name]
-        jog.displacements = []
-        jog.velocities = [vel]
-        jog.duration = 0.2
-
-        self._wrist_joint_pub.publish(jog)
-        self._last_web_pitch = web_pitch
 
     async def _send_ack(
         self,

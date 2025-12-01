@@ -10,7 +10,6 @@ import math
 from typing import Optional
 import numpy as np
 import rclpy
-from control_msgs.msg import JointJog
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
@@ -41,16 +40,6 @@ class PoseToServoNode(Node):
         self.declare_parameter("command_in_ee", False)
         self.declare_parameter("angular_gain", 2.0)
         self.declare_parameter("max_angular_speed", 1.5)
-        # If false, do not generate angular velocity commands at all. This
-        # effectively disables Servo orientation control so that rotation
-        # can be handled purely via JointJog on specific joints.
-        self.declare_parameter("enable_orientation_control", False)
-        # Optional: when only orientation changes (position ~fixed), steer a single joint via JointJog
-        self.declare_parameter("orientation_only_joint_name", "")
-        self.declare_parameter("orientation_only_pos_threshold", 1e-3)
-        self.declare_parameter("orientation_only_angle_threshold_deg", 3.0)
-        self.declare_parameter("orientation_only_gain", 1.0)
-        self.declare_parameter("orientation_only_max_speed", 1.0)
 
         input_topic = self.get_parameter("input_topic").get_parameter_value().string_value
         servo_output_topic = (
@@ -74,36 +63,11 @@ class PoseToServoNode(Node):
         self._command_in_ee = (
             self.get_parameter("command_in_ee").get_parameter_value().bool_value
         )
-        self._enable_orientation = (
-            self.get_parameter("enable_orientation_control").get_parameter_value().bool_value
-        )
-        self._ori_joint_name = (
-            self.get_parameter("orientation_only_joint_name")
-            .get_parameter_value()
-            .string_value
-        ).strip()
-        self._ori_pos_thresh = (
-            self.get_parameter("orientation_only_pos_threshold").get_parameter_value().double_value
-        )
-        self._ori_ang_thresh = math.radians(
-            self.get_parameter("orientation_only_angle_threshold_deg").get_parameter_value().double_value
-        )
-        self._ori_joint_gain = (
-            self.get_parameter("orientation_only_gain").get_parameter_value().double_value
-        )
-        self._ori_joint_max = (
-            self.get_parameter("orientation_only_max_speed").get_parameter_value().double_value
-        )
 
         # Orientation tracking enabled (angular velocity from orientation error)
 
         qos = QoSProfile(depth=10)
         self._servo_pub = self.create_publisher(TwistStamped, servo_output_topic, qos)
-        self._joint_pub = (
-            self.create_publisher(JointJog, "/servo_node/delta_joint_cmds", qos)
-            if self._ori_joint_name
-            else None
-        )
         self.create_subscription(PoseStamped, input_topic, self._on_pose, qos)
 
         self._tf_buffer = tf2_ros.Buffer()
@@ -146,7 +110,6 @@ class PoseToServoNode(Node):
         linear_error = target_pos - current_pos
         raw_linear_cmd = self._linear_gain * linear_error
         linear_cmd = raw_linear_cmd
-        pos_norm = float(np.linalg.norm(linear_error))
 
         # No Z-pitch coupling in baseline
 
@@ -154,59 +117,34 @@ class PoseToServoNode(Node):
         if linear_norm > self._max_linear > 0.0:
             linear_cmd *= self._max_linear / linear_norm
 
-        if self._enable_orientation:
-            # Orientation error → angular velocity
-            tq = target_pose.pose.orientation
-            cq = current_tf.transform.rotation
-            # Use xyzw ordering for tf_transformations
-            q_target = np.array([tq.x, tq.y, tq.z, tq.w], dtype=float)
-            q_current = np.array([cq.x, cq.y, cq.z, cq.w], dtype=float)
-            # rotation bringing current -> target
-            q_err = quaternion_multiply(q_target, quaternion_conjugate(q_current))
-            # Ensure ndarray type for safe math operations
-            q_err = np.asarray(q_err, dtype=float)
-            # Ensure sign consistency for shortest path
-            if q_err[3] < 0.0:
-                q_err = -q_err
-            w = float(q_err[3])
-            w = max(min(w, 1.0), -1.0)
-            angle = 2.0 * math.acos(w)
-            s = math.sqrt(max(1.0 - w * w, 0.0))
-            if s < 1e-6 or angle < 1e-6:
-                axis = np.array([0.0, 0.0, 0.0], dtype=float)
-            else:
-                axis = (q_err[0:3] / s).astype(float, copy=False)
-            angular_error = axis * angle
-            raw_angular_cmd = self._angular_gain * angular_error
-            ang_norm = float(np.linalg.norm(raw_angular_cmd))
-            if ang_norm > self._max_angular > 0.0:
-                angular_cmd = raw_angular_cmd * (self._max_angular / ang_norm)
-            else:
-                angular_cmd = raw_angular_cmd
+        # Orientation error → angular velocity
+        tq = target_pose.pose.orientation
+        cq = current_tf.transform.rotation
+        # Use xyzw ordering for tf_transformations
+        q_target = np.array([tq.x, tq.y, tq.z, tq.w], dtype=float)
+        q_current = np.array([cq.x, cq.y, cq.z, cq.w], dtype=float)
+        # rotation bringing current -> target
+        q_err = quaternion_multiply(q_target, quaternion_conjugate(q_current))
+        # Ensure ndarray type for safe math operations
+        q_err = np.asarray(q_err, dtype=float)
+        # Ensure sign consistency for shortest path
+        if q_err[3] < 0.0:
+            q_err = -q_err
+        w = float(q_err[3])
+        w = max(min(w, 1.0), -1.0)
+        angle = 2.0 * math.acos(w)
+        s = math.sqrt(max(1.0 - w * w, 0.0))
+        if s < 1e-6 or angle < 1e-6:
+            axis = np.array([0.0, 0.0, 0.0], dtype=float)
         else:
-            angular_error = np.zeros(3, dtype=float)
-            angular_cmd = np.zeros(3, dtype=float)
-
-        # If the incoming command is orientation-only (position nearly fixed), optionally steer a single joint.
-        if (
-            self._ori_joint_name
-            and self._joint_pub is not None
-            and pos_norm < self._ori_pos_thresh
-        ):
-            # Use the pitch component (y-axis) of the orientation error in the reference frame.
-            pitch_err = float(angular_error[1]) if angular_error.size >= 2 else 0.0
-            # Treat angle threshold as a small deadband; default 0 to respond to any pure orientation change
-            if abs(pitch_err) > self._ori_ang_thresh:
-                vel = self._ori_joint_gain * pitch_err
-                if self._ori_joint_max > 0.0:
-                    vel = max(min(vel, self._ori_joint_max), -self._ori_joint_max)
-                jog = JointJog()
-                jog.header.stamp = self.get_clock().now().to_msg()
-                jog.header.frame_id = self._reference_frame
-                jog.joint_names = [self._ori_joint_name]
-                jog.velocities = [vel]
-                self._joint_pub.publish(jog)
-                return
+            axis = (q_err[0:3] / s).astype(float, copy=False)
+        angular_error = axis * angle
+        raw_angular_cmd = self._angular_gain * angular_error
+        ang_norm = float(np.linalg.norm(raw_angular_cmd))
+        if ang_norm > self._max_angular > 0.0:
+            angular_cmd = raw_angular_cmd * (self._max_angular / ang_norm)
+        else:
+            angular_cmd = raw_angular_cmd
 
         # Optionally express commanded twist in EE(local) frame
         if self._command_in_ee:
