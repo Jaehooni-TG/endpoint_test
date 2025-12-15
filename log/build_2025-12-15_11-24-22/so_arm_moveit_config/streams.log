@@ -1,0 +1,61 @@
+[0.006s] Invoking command in '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config': AMENT_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:/opt/ros/humble /usr/bin/cmake /home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_moveit_config -DCMAKE_INSTALL_PREFIX=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config
+[0.048s] -- The C compiler identification is GNU 11.4.0
+[0.090s] -- The CXX compiler identification is GNU 11.4.0
+[0.099s] -- Detecting C compiler ABI info
+[0.147s] -- Detecting C compiler ABI info - done
+[0.153s] -- Check for working C compiler: /usr/lib/ccache/gcc - skipped
+[0.153s] -- Detecting C compile features
+[0.154s] -- Detecting C compile features - done
+[0.156s] -- Detecting CXX compiler ABI info
+[0.225s] -- Detecting CXX compiler ABI info - done
+[0.229s] -- Check for working CXX compiler: /usr/lib/ccache/g++ - skipped
+[0.230s] -- Detecting CXX compile features
+[0.230s] -- Detecting CXX compile features - done
+[0.231s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.358s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.448s] -- Configuring done
+[0.449s] -- Generating done
+[0.450s] -- Build files have been written to: /home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config
+[0.452s] Invoked command in '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config' returned '0': AMENT_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:/opt/ros/humble /usr/bin/cmake /home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_moveit_config -DCMAKE_INSTALL_PREFIX=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config
+[0.453s] Invoking command in '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config': AMENT_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:/opt/ros/humble /usr/bin/cmake --build /home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config -- -j20 -l20
+[0.477s] Invoked command in '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config' returned '0': AMENT_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:/opt/ros/humble /usr/bin/cmake --build /home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config -- -j20 -l20
+[0.478s] Invoking command in '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config': AMENT_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:/opt/ros/humble /usr/bin/cmake --install /home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config
+[0.485s] -- Install configuration: ""
+[0.485s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/ament_index/resource_index/package_run_dependencies/so_arm_moveit_config
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/ament_index/resource_index/parent_prefix_path/so_arm_moveit_config
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/environment/ament_prefix_path.sh
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/environment/ament_prefix_path.dsv
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/environment/path.sh
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/environment/path.dsv
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/local_setup.bash
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/local_setup.sh
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/local_setup.zsh
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/local_setup.dsv
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/package.dsv
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/ament_index/resource_index/packages/so_arm_moveit_config
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/cmake/so_arm_moveit_configConfig.cmake
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/cmake/so_arm_moveit_configConfig-version.cmake
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/package.xml
+[0.486s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch
+[0.487s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/moveit_rviz.launch.py
+[0.487s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/rsp.launch.py
+[0.487s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/warehouse_db.launch.py
+[0.489s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/demo.launch.py
+[0.489s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/move_group.launch.py
+[0.489s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/spawn_controllers.launch.py
+[0.490s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/static_virtual_joint_tfs.launch.py
+[0.490s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/launch/setup_assistant.launch.py
+[0.491s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config
+[0.491s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/moveit.rviz
+[0.492s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/so101_new_calib.srdf
+[0.492s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/so101_new_calib.urdf.xacro
+[0.492s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/kinematics.yaml
+[0.494s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/joint_limits.yaml
+[0.494s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/moveit_controllers.yaml
+[0.494s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/ros2_controllers.yaml
+[0.495s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/pilz_cartesian_limits.yaml
+[0.495s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/initial_positions.yaml
+[0.496s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/so101_new_calib.ros2_control.xacro
+[0.496s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/config/moveit_servo.yaml
+[0.497s] -- Installing: /home/teamgrit/jaehooni/endpoint_control/install/so_arm_moveit_config/share/so_arm_moveit_config/.setup_assistant
+[0.499s] Invoked command in '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config' returned '0': AMENT_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/teamgrit/jaehooni/endpoint_control/install/so_arm_description:/opt/ros/humble /usr/bin/cmake --install /home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config

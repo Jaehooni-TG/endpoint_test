@@ -32,6 +32,8 @@ setup(
             'joint_limit_recovery_node = so_arm_motion_interface.joint_limit_recovery_node:main',
             'enable_servo_orientation_drift_node = so_arm_motion_interface.enable_servo_orientation_drift_node:main',
             'z_height_joint_controller_node = so_arm_motion_interface.z_height_joint_controller_node:main',
+            'so101_lerobot_bridge_node = so_arm_motion_interface.so101_lerobot_bridge_node:main',
+            'initial_state_collision_guard_node = so_arm_motion_interface.initial_state_collision_guard_node:main',
                     ],
     },
 )

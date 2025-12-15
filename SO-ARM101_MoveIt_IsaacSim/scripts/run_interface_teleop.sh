@@ -9,6 +9,13 @@ set -euo pipefail
 #   source install/setup.bash
 #   ./scripts/run_interface_teleop.sh
 #
+# Note:
+#   This script 자체는 RViz / Isaac Sim 을 직접 띄우지 않는다.
+#   RViz 는 so_arm_moveit_config/launch/demo.launch.py 가 담당하고,
+#   그 demo.launch.py 는 다시 servo_teleop.launch.py 안에서 IncludeLaunchDescription 으로 불린다.
+#   따라서 RViz 를 빼고 headless 로만 사용하고 싶다면
+#   run_interface_teleop.sh 가 아니라 servo_teleop.launch.py / demo.launch.py 쪽을 수정하면 된다.
+#
 # Env overrides:
 #   WS_URL=ws://host:port/path?query           # if empty, skips pose websocket bridge
 #   REF_FRAME=base                             # reference frame for planning/servo
@@ -30,17 +37,22 @@ EE_FRAME=${EE_FRAME:-gripper}
 POSE_TOPIC=${POSE_TOPIC:-/so_arm/pose_cmd}
 AUTO_START=${AUTO_START:-false}
 # Tuning knobs (env-overridable)
-# Linear path (more aggressive: faster convergence / travel)
-LIN_GAIN=${LIN_GAIN:-24.0}
-MAX_LIN_SPEED=${MAX_LIN_SPEED:-6.0}
-# Angular path (still secondary, but snappier)
-ANG_GAIN=${ANG_GAIN:-24.0}
-MAX_ANG_SPEED=${MAX_ANG_SPEED:-6.0}
-# Bridge smoothing/step (higher responsiveness, less filtering)
-POS_ALPHA=${POS_ALPHA:-0.92}
-ORI_ALPHA=${ORI_ALPHA:-0.85}
-MAX_POS_STEP=${MAX_POS_STEP:-0.60}
-MAX_ORI_STEP=${MAX_ORI_STEP:-0.80}
+# Linear path (conservative, smoother like RViz planning)
+# - Lower gain = 덜 공격적인 추종
+# - 낮은 max speed = 속도 상한 제한 (더 부드러운 가속/감속)
+LIN_GAIN=${LIN_GAIN:-10.0}
+MAX_LIN_SPEED=${MAX_LIN_SPEED:-2.0}
+# Angular path (orientation도 부드럽게)
+ANG_GAIN=${ANG_GAIN:-4.0}
+MAX_ANG_SPEED=${MAX_ANG_SPEED:-2.0}
+# Bridge smoothing/step (더 많은 필터링 + per-step 제한)
+# alpha가 1.0에 가까울수록 \"새 값\"을 많이 따라가고,
+# 0.0에 가까울수록 이전 pose를 더 많이 유지한다.
+POS_ALPHA=${POS_ALPHA:-0.6}
+ORI_ALPHA=${ORI_ALPHA:-0.5}
+# 한 번 업데이트에서 최대 이동/회전량 (m, rad)
+MAX_POS_STEP=${MAX_POS_STEP:-0.15}
+MAX_ORI_STEP=${MAX_ORI_STEP:-0.35}
 # Command frame toggle for pose_to_servo (true: EE local frame, false: base frame)
 CMD_IN_EE=${CMD_IN_EE:-false}
 # Default WS tracks:
@@ -59,12 +71,7 @@ IMAGE_MAX_HEIGHT=${IMAGE_MAX_HEIGHT:-720}
 IMAGE_BITRATE=${IMAGE_BITRATE:-4000000}
 IMAGE_H264_CODEC_STRING=${IMAGE_H264_CODEC_STRING:-avc1.42E03C}
 IMAGE_BRIDGE_ENABLE=${IMAGE_BRIDGE_ENABLE:-true}
-# Ready-pose automation: comma-separated 5 joint values (Rotation,Pitch,Elbow,Wrist_Pitch,Wrist_Roll)
-READY_POSE=${READY_POSE:-0.0,0.1,0.7,0.5,0.0}
-READY_POSE_TIME_SEC=${READY_POSE_TIME_SEC:-2}
 START_SERVO_AFTER_READY=${START_SERVO_AFTER_READY:-true}
-# Extra delay before sending ready pose (allow controllers/planning scene to come up)
-READY_POSE_DELAY_SEC=${READY_POSE_DELAY_SEC:-2}
 
 JOINT_RECOVERY_PIDS=""
 IMAGE_BRIDGE_PID=""
@@ -88,17 +95,6 @@ echo "[run] Enabling orientation drift on Servo (translations prioritized)"
 ros2 run so_arm_motion_interface enable_servo_orientation_drift_node \
   >/tmp/so_arm_servo_drift_setup.log 2>&1 &
 
-send_ready_pose() {
-  if [[ -z "$READY_POSE" ]]; then
-    return
-  fi
-  IFS=',' read -r J0 J1 J2 J3 J4 <<<"$READY_POSE"
-  echo "[run] Sending ready pose [$J0,$J1,$J2,$J3,$J4] over /arm_controller/joint_trajectory"
-  ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory \
-    "{joint_names:[Rotation,Pitch,Elbow,Wrist_Pitch,Wrist_Roll], points:[{positions:[$J0,$J1,$J2,$J3,$J4], time_from_start:{sec: ${READY_POSE_TIME_SEC}, nanosec: 0}}]}" \
-    >/tmp/so_arm_ready_pose.log 2>&1 || true
-}
-
 start_servo_safe() {
   echo "[run] Waiting for /servo_node/start_servo service..."
   for _ in {1..10}; do
@@ -113,11 +109,16 @@ start_servo_safe() {
 
 echo "[run] Waiting 2s for bringup..."
 sleep 2
-if [[ "$READY_POSE_DELAY_SEC" != "0" ]]; then
-  echo "[run] Extra wait ${READY_POSE_DELAY_SEC}s before ready pose (controller warmup)"
-  sleep "$READY_POSE_DELAY_SEC"
+
+echo "[run] Running initial self-collision check with MoveIt..."
+if ! ros2 run so_arm_motion_interface initial_state_collision_guard_node \
+  >/tmp/so_arm_initial_collision_check.log 2>&1; then
+  echo "[run] Initial pose is in self-collision."
+  echo "[run] See /tmp/so_arm_initial_collision_check.log for details (contact pairs, etc.)."
+  echo "[run] Move the robot to a collision-free pose and rerun this script."
+  exit 1
 fi
-send_ready_pose
+
 if [[ "$START_SERVO_AFTER_READY" == "true" ]]; then
   start_servo_safe
 fi
@@ -166,7 +167,7 @@ fi
 
 ros2 run so_arm_motion_interface websocket_joint_state_bridge_node \
   --ros-args \
-    -p publish_period:=0.2 \
+    -p publish_period:=0.1 \
     "${JOINT_WS_ARGS[@]}" \
   >/tmp/so_arm_ws_joint.log 2>&1 &
 JOINT_BRIDGE_PID=$!

@@ -22,7 +22,9 @@ setup(
     description='(Deprecated) Custom planar IK + joint control for SO-ARM101, fed by web Pose',
     license='MIT',
     entry_points={
-        # console_scripts left intentionally empty: custom IK controller is not used anymore
-        'console_scripts': [],
+        'console_scripts': [
+            'lecabot_direct_controller_node = so_arm_custom_control.lecabot_direct_controller_node:main',
+            'custom_direct_controller_node = so_arm_custom_control.lecabot_direct_controller_node:main',
+        ],
     },
 )

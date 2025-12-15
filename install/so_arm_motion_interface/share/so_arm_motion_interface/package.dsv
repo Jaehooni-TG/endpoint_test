@@ -1,0 +1,6 @@
+source;share/so_arm_motion_interface/hook/pythonpath.ps1
+source;share/so_arm_motion_interface/hook/pythonpath.dsv
+source;share/so_arm_motion_interface/hook/pythonpath.sh
+source;share/so_arm_motion_interface/hook/ament_prefix_path.ps1
+source;share/so_arm_motion_interface/hook/ament_prefix_path.dsv
+source;share/so_arm_motion_interface/hook/ament_prefix_path.sh

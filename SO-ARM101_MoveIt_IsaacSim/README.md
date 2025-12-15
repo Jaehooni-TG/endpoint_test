@@ -160,11 +160,11 @@ source /opt/ros/humble/setup.bash
 - Damping: 0.60
 - Set articulation root to base mesh (xform)
 
-**Create ROS2 Action Graph**:
+**Create ROS2 Action Graph** (simulation only, for historical reference):
 - Tools → Robotics → ROS2 Omnigraphs → Joint States
 - Articulation: base mesh (xform)
-- Joint States Topic: `/isaac_joint_states`
-- Joint Commands Topic: `/isaac_joint_command`
+- Joint States Topic: `/so_arm/hw_joint_states`
+- Joint Commands Topic: `/so_arm/hw_joint_command`
 
 ### 6. Final Configuration
 
@@ -179,8 +179,8 @@ With:
 ```xml
 <!-- <plugin>mock_components/GenericSystem</plugin> -->
 <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
-<param name="joint_states_topic">/isaac_joint_states</param>
-<param name="joint_commands_topic">/isaac_joint_command</param>
+<param name="joint_states_topic">/so_arm/hw_joint_states</param>
+<param name="joint_commands_topic">/so_arm/hw_joint_command</param>
 ```
 
 Final rebuild:
