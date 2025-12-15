@@ -1,0 +1,82 @@
+[0.582s] Invoking command in '/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_motion_interface': PYTHONPATH=/home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/so_arm_motion_interface build --build-base /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build install --record /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/install.log --single-version-externally-managed install_data
+[0.738s] running egg_info
+[0.738s] creating ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info
+[0.738s] writing ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/PKG-INFO
+[0.738s] writing dependency_links to ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/dependency_links.txt
+[0.738s] writing entry points to ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/entry_points.txt
+[0.738s] writing requirements to ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/requires.txt
+[0.738s] writing top-level names to ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/top_level.txt
+[0.739s] writing manifest file '../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/SOURCES.txt'
+[0.739s] reading manifest file '../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/SOURCES.txt'
+[0.740s] writing manifest file '../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info/SOURCES.txt'
+[0.740s] running build
+[0.740s] running build_py
+[0.740s] creating /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build
+[0.740s] creating /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib
+[0.740s] creating /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.740s] copying so_arm_motion_interface/websocket_joint_state_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.740s] copying so_arm_motion_interface/__init__.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/joint_limit_recovery_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/pose_to_joint_trajectory_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/twist_to_servo_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/so101_lerobot_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/z_height_joint_controller_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/websocket_pose_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/pose_to_servo_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/enable_servo_orientation_drift_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/initial_state_collision_guard_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/so101_feetech_driver.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] copying so_arm_motion_interface/websocket_image_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface
+[0.741s] running install
+[0.741s] running install_lib
+[0.741s] creating /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.741s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/websocket_joint_state_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/__init__.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/joint_limit_recovery_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/pose_to_joint_trajectory_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/twist_to_servo_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/so101_lerobot_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/z_height_joint_controller_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/websocket_pose_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/pose_to_servo_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/enable_servo_orientation_drift_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/initial_state_collision_guard_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/so101_feetech_driver.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] copying /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build/lib/so_arm_motion_interface/websocket_image_bridge_node.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface
+[0.742s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/websocket_joint_state_bridge_node.py to websocket_joint_state_bridge_node.cpython-310.pyc
+[0.743s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/__init__.py to __init__.cpython-310.pyc
+[0.743s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/joint_limit_recovery_node.py to joint_limit_recovery_node.cpython-310.pyc
+[0.743s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/pose_to_joint_trajectory_node.py to pose_to_joint_trajectory_node.cpython-310.pyc
+[0.744s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/twist_to_servo_node.py to twist_to_servo_node.cpython-310.pyc
+[0.744s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/so101_lerobot_bridge_node.py to so101_lerobot_bridge_node.cpython-310.pyc
+[0.745s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/z_height_joint_controller_node.py to z_height_joint_controller_node.cpython-310.pyc
+[0.745s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/websocket_pose_bridge_node.py to websocket_pose_bridge_node.cpython-310.pyc
+[0.749s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/pose_to_servo_node.py to pose_to_servo_node.cpython-310.pyc
+[0.750s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/enable_servo_orientation_drift_node.py to enable_servo_orientation_drift_node.cpython-310.pyc
+[0.750s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/initial_state_collision_guard_node.py to initial_state_collision_guard_node.cpython-310.pyc
+[0.751s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/so101_feetech_driver.py to so101_feetech_driver.cpython-310.pyc
+[0.751s] byte-compiling /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface/websocket_image_bridge_node.py to websocket_image_bridge_node.cpython-310.pyc
+[0.753s] running install_data
+[0.753s] creating /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/ament_index
+[0.753s] creating /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/ament_index/resource_index
+[0.753s] creating /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/ament_index/resource_index/packages
+[0.753s] copying resource/so_arm_motion_interface -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/ament_index/resource_index/packages
+[0.753s] copying package.xml -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/so_arm_motion_interface
+[0.753s] creating /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/so_arm_motion_interface/launch
+[0.753s] copying launch/servo_teleop.launch.py -> /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/share/so_arm_motion_interface/launch
+[0.753s] running install_egg_info
+[0.754s] Copying ../../../build/so_arm_motion_interface/so_arm_motion_interface.egg-info to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages/so_arm_motion_interface-0.0.0-py3.10.egg-info
+[0.754s] running install_scripts
+[0.765s] Installing enable_servo_orientation_drift_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.765s] Installing initial_state_collision_guard_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.765s] Installing joint_limit_recovery_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.765s] Installing pose_to_joint_trajectory_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing pose_to_servo_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing so101_lerobot_bridge_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing twist_to_servo_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing websocket_image_bridge_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing websocket_joint_state_bridge_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing websocket_pose_bridge_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] Installing z_height_joint_controller_node script to /home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/so_arm_motion_interface
+[0.766s] writing list of installed files to '/home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/install.log'
+[0.779s] Invoked command in '/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_motion_interface' returned '0': PYTHONPATH=/home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/teamgrit/jaehooni/endpoint_control/install/so_arm_motion_interface/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/so_arm_motion_interface build --build-base /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/build install --record /home/teamgrit/jaehooni/endpoint_control/build/so_arm_motion_interface/install.log --single-version-externally-managed install_data

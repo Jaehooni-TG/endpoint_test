@@ -7,8 +7,8 @@ set(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 # The top level Makefile was generated from the following files:
 set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
-  "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/CMakeLists.txt"
-  "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/package.xml"
+  "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/CMakeLists.txt"
+  "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/package.xml"
   "CMakeFiles/3.22.1/CMakeCCompiler.cmake"
   "CMakeFiles/3.22.1/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.22.1/CMakeSystem.cmake"

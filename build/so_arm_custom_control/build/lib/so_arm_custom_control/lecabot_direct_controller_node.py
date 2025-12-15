@@ -107,6 +107,9 @@ class LecabotDirectControllerNode(Node):
     self.declare_parameter("pan_gain_deg_per_m", 60.0)
     self.declare_parameter("pan_limit_deg", 110.0)
 
+    # HW joint command topic (JointState) for direct Feetech bridge
+    self.declare_parameter("hw_joint_command_topic", "/so_arm/hw_joint_command")
+
     # Heuristic joint-space controller gains (deg / meter)
     # - forward/back (웹 x): 먼저 Pitch, 그 다음 Elbow
     #   → X축 감도를 키우기 위해 기본 gain 을 크게 설정
@@ -126,6 +129,7 @@ class LecabotDirectControllerNode(Node):
     self.declare_parameter("wrist_pitch_bias_deg", -10.0)
     self.declare_parameter("wrist_pitch_limit_deg", 95.0)
     self.declare_parameter("wrist_roll_limit_deg", 160.0)
+    self.declare_parameter("wrist_follow_scale", 1.0)  # Elbow 추종 비율 (1.0 = 완전 추종)
 
     # Direction 기반 스텝: 거리에 덜 민감하게 만들기 위한 고정 스텝(미터)
     self.declare_parameter("direction_step_m", 0.05)
@@ -182,11 +186,15 @@ class LecabotDirectControllerNode(Node):
     self._wrist_pitch_bias = float(self.get_parameter("wrist_pitch_bias_deg").value)
     self._wrist_pitch_limit = abs(float(self.get_parameter("wrist_pitch_limit_deg").value))
     self._wrist_roll_limit = abs(float(self.get_parameter("wrist_roll_limit_deg").value))
+    self._wrist_follow_scale = float(self.get_parameter("wrist_follow_scale").value)
     self._direction_step = float(self.get_parameter("direction_step_m").value)
     self._direction_deadzone = float(self.get_parameter("direction_deadzone_m").value)
     self._time_horizon = max(0.02, float(self.get_parameter("time_horizon").value))
     self._input_is_web_axes = bool(self.get_parameter("input_is_web_axes").value)
     self._use_moveit_ik = bool(self.get_parameter("use_moveit_ik").value)
+    self._hw_joint_cmd_topic = (
+        self.get_parameter("hw_joint_command_topic").get_parameter_value().string_value
+    )
 
     self._group_name = (
         self.get_parameter("group_name").get_parameter_value().string_value
@@ -233,6 +241,7 @@ class LecabotDirectControllerNode(Node):
     self.create_subscription(PoseStamped, input_topic, self._on_pose, qos)
     self.create_subscription(JointState, joint_state_topic, self._on_joint_state, qos)
     self._traj_pub = self.create_publisher(JointTrajectory, trajectory_topic, qos)
+    self._hw_js_pub = self.create_publisher(JointState, self._hw_joint_cmd_topic, qos)
 
     self.get_logger().info(
         "LeCabot-style direct controller active | "
@@ -465,7 +474,7 @@ class LecabotDirectControllerNode(Node):
 
     # Wrist_Pitch 를 Elbow 에 종속: wrist_pitch = -elbow + bias
     if self._wrist_follow_elbow:
-      wrist_pitch = -elbow + math.radians(self._wrist_pitch_bias)
+      wrist_pitch = -self._wrist_follow_scale * elbow + math.radians(self._wrist_pitch_bias)
 
     # 안전 범위 클램프 (URDF 리밋 기준)
     limit = math.radians(self._wrist_pitch_limit)
@@ -508,6 +517,13 @@ class LecabotDirectControllerNode(Node):
     point.time_from_start.nanosec = int((self._time_horizon % 1.0) * 1e9)
     traj.points.append(point)
     self._traj_pub.publish(traj)
+
+    # Publish JointState for Feetech bridge (same ordering)
+    js = JointState()
+    js.header = traj.header
+    js.name = list(self._joint_names)
+    js.position = list(positions)
+    self._hw_js_pub.publish(js)
 
 
 def main() -> None:

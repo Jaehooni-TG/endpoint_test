@@ -53,7 +53,7 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description
+CMAKE_SOURCE_DIR = /home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description
@@ -78,6 +78,6 @@ CMakeFiles/uninstall.dir/clean:
 .PHONY : CMakeFiles/uninstall.dir/clean
 
 CMakeFiles/uninstall.dir/depend:
-	cd /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description /home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description/CMakeFiles/uninstall.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description /home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description /home/teamgrit/jaehooni/endpoint_control/build/so_arm_description/CMakeFiles/uninstall.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/uninstall.dir/depend
 

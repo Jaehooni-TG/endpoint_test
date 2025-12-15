@@ -1,9 +1,0 @@
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/uninstall.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/so_arm_moveit_config_uninstall.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/test.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/edit_cache.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/rebuild_cache.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/list_install_components.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/install.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/install/local.dir
-/home/teamgrit/jaehooni/endpoint_control/build/so_arm_moveit_config/CMakeFiles/install/strip.dir

@@ -1,4 +1,4 @@
-# Install script for directory: /home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description
+# Install script for directory: /home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,16 +44,16 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/so_arm_description" TYPE DIRECTORY FILES
-    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/urdf"
-    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/meshes"
-    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/config"
+    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/urdf"
+    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/meshes"
+    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/config"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/so_arm_description" TYPE FILE FILES
-    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/joints_properties.xml"
-    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/README.md"
+    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/joints_properties.xml"
+    "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/README.md"
     )
 endif()
 
@@ -113,7 +113,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/so_arm_description" TYPE FILE FILES "/home/teamgrit/jaehooni/endpoint_control/SO-ARM101_MoveIt_IsaacSim/src/so_arm_description/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/so_arm_description" TYPE FILE FILES "/home/teamgrit/jaehooni/endpoint_control/SO-ARM_Teleop/src/so_arm_description/package.xml")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
