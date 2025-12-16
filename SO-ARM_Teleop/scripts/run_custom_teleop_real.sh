@@ -28,7 +28,7 @@ IMAGE_ENABLE="${IMAGE_ENABLE:-true}"
 POSE_TOPIC="${POSE_TOPIC:-/so_arm/pose_cmd}"
 REF_FRAME="${REF_FRAME:-base}"
 EE_FRAME="${EE_FRAME:-gripper}"
-TRAJ_TOPIC="${TRAJ_TOPIC:-/so_arm/hw_joint_command}"
+TRAJ_TOPIC="${TRAJ_TOPIC:-/arm_controller/joint_trajectory}"
 JOINT_STATE_TOPIC="${JOINT_STATE_TOPIC:-/so_arm/hw_joint_states}"
 URDF_PATH="${URDF_PATH:-${ROOT_DIR}/src/so_arm_description/urdf/so101_new_calib.urdf}"
 

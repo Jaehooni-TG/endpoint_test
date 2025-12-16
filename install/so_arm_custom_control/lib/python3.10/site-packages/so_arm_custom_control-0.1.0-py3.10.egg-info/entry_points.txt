@@ -1,4 +1,0 @@
-[console_scripts]
-custom_direct_controller_node = so_arm_custom_control.lecabot_direct_controller_node:main
-lecabot_direct_controller_node = so_arm_custom_control.lecabot_direct_controller_node:main
-
