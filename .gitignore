@@ -1,0 +1,5 @@
+# Build and install directories
+/SO-ARM_Teleop/build/
+/SO-ARM_Teleop/install/
+/SO-ARM_Teleop/log/
+/SO-ARM_Teleop/devel/
