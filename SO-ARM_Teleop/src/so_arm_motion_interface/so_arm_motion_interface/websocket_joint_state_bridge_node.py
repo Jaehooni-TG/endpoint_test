@@ -242,6 +242,9 @@ class WebsocketJointStateBridge(Node):
           # Skip non-JSON helper frames
           continue
 
+        # Log the raw JSON payload exactly as received from WebSocket.
+        self.get_logger().info(f"WS joint raw payload: {text}")
+
         try:
           payload = json.loads(text)
         except Exception:
@@ -269,6 +272,9 @@ class WebsocketJointStateBridge(Node):
         except (TypeError, ValueError):
           self.get_logger().debug("Jaw value in joint payload is non-numeric; ignoring.")
           continue
+
+        # Log received Jaw value from WebSocket for debugging/inspection.
+        self.get_logger().info(f"Received Jaw command from WS: {jaw_val:.3f} rad")
 
         msg = Float64()
         msg.data = jaw_val
