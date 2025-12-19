@@ -6,6 +6,7 @@
   <license>MIT</license>
 
   <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
   <depend>rclpy</depend>
   <depend>geometry_msgs</depend>
   <exec_depend>moveit_servo</exec_depend>

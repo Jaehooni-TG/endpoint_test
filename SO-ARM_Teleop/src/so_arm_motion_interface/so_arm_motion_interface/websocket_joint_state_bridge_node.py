@@ -20,6 +20,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
 
 try:
   import websockets
@@ -54,6 +55,14 @@ class WebsocketJointStateBridge(Node):
     self.declare_parameter("ws_ping_interval", 20.0)
     self.declare_parameter("ws_ping_timeout", 20.0)
 
+    # Optional Jaw command reception (Web → ROS).
+    # When enabled, incoming JSON payloads with {"name":[...], "position":[...]}
+    # are inspected and the value for the configured joint is published as a
+    # simple scalar command.
+    self.declare_parameter("enable_jaw_command", False)
+    self.declare_parameter("jaw_joint_name", "Jaw")
+    self.declare_parameter("jaw_command_topic", "/so_arm/jaw_command")
+
     # Resolve parameters
     self._url = (
         self.get_parameter("websocket_url").get_parameter_value().string_value
@@ -79,6 +88,23 @@ class WebsocketJointStateBridge(Node):
     self._ws_ping_timeout = float(
         self.get_parameter("ws_ping_timeout").value
     )
+
+    # Jaw command configuration
+    self._enable_jaw_command = bool(
+        self.get_parameter("enable_jaw_command").value
+    )
+    self._jaw_joint_name = (
+        self.get_parameter("jaw_joint_name").get_parameter_value().string_value
+    )
+    jaw_cmd_topic = (
+        self.get_parameter("jaw_command_topic").get_parameter_value().string_value
+    )
+    self._jaw_cmd_pub = None
+    if self._enable_jaw_command:
+      self._jaw_cmd_pub = self.create_publisher(Float64, jaw_cmd_topic, QoSProfile(depth=10))
+      self.get_logger().info(
+          f"Jaw command reception enabled | joint='{self._jaw_joint_name}' -> topic:{jaw_cmd_topic}"
+      )
 
     # Joint state cache
     self._lock = Lock()
@@ -147,7 +173,25 @@ class WebsocketJointStateBridge(Node):
             self._url, ping_interval=ping_interval, ping_timeout=ping_timeout
         ) as ws:
           self.get_logger().info("WebSocket connection established.")
-          await self._send_loop(ws)
+          # Run send loop (RPi → Web) and optional receive loop (Web → RPi, Jaw only)
+          send_task = asyncio.create_task(self._send_loop(ws))
+          recv_task = (
+              asyncio.create_task(self._recv_loop(ws))
+              if self._enable_jaw_command
+              else None
+          )
+          if recv_task is None:
+            await send_task
+          else:
+            done, pending = await asyncio.wait(
+                {send_task, recv_task}, return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in pending:
+              task.cancel()
+              try:
+                await task
+              except asyncio.CancelledError:
+                pass
       except asyncio.CancelledError:  # pragma: no cover - loop shutdown
         break
       except Exception as exc:
@@ -169,6 +213,68 @@ class WebsocketJointStateBridge(Node):
         await asyncio.sleep(self._period)
     finally:
       self.get_logger().info("WebSocket joint send loop terminated.")
+
+  async def _recv_loop(self, ws: WebSocketClientProtocol) -> None:
+    """Receive joint-space commands from WebSocket and extract Jaw target.
+
+    Expected payloads follow the same shape as the state stream, e.g.:
+      {"name":[...], "position":[...]}
+    Only the configured jaw joint is used; other joints are ignored.
+    """
+    if self._jaw_cmd_pub is None:
+      # Guard: should not happen if enable_jaw_command is False, but keep safe.
+      return
+
+    try:
+      async for raw_message in ws:
+        # websockets delivers str for text frames, bytes for binary.
+        if isinstance(raw_message, bytes):
+          try:
+            raw_message = raw_message.decode("utf-8")
+          except UnicodeDecodeError:
+            self.get_logger().debug("Received non-UTF8 frame on joint WS; ignoring.")
+            continue
+
+        text = raw_message.strip()
+        if not text:
+          continue
+        if text[0] not in ("{", "["):
+          # Skip non-JSON helper frames
+          continue
+
+        try:
+          payload = json.loads(text)
+        except Exception:
+          self.get_logger().debug("Received non-JSON joint payload; ignoring.")
+          continue
+
+        if not isinstance(payload, dict):
+          continue
+
+        names = payload.get("name")
+        positions = payload.get("position")
+        if not isinstance(names, list) or not isinstance(positions, list):
+          continue
+        if len(names) != len(positions):
+          continue
+
+        try:
+          idx = names.index(self._jaw_joint_name)
+        except ValueError:
+          # No jaw joint in this message
+          continue
+
+        try:
+          jaw_val = float(positions[idx])
+        except (TypeError, ValueError):
+          self.get_logger().debug("Jaw value in joint payload is non-numeric; ignoring.")
+          continue
+
+        msg = Float64()
+        msg.data = jaw_val
+        self._jaw_cmd_pub.publish(msg)
+    finally:
+      self.get_logger().info("WebSocket joint receive loop terminated.")
 
   def destroy_node(self) -> bool:
     self._stop_event.set()

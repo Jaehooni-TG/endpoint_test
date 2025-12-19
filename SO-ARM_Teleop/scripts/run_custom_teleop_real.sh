@@ -91,7 +91,19 @@ ros2 run so_arm_motion_interface websocket_joint_state_bridge_node \
   -p websocket_url:="$WS_JOINT_URL" \
   -p publish_period:=0.1 \
   -p joint_topic:="$JOINT_STATE_TOPIC" \
+  -p enable_jaw_command:=true \
+  -p jaw_joint_name:=Jaw \
+  -p jaw_command_topic:=/so_arm/jaw_command \
   >/tmp/so_arm_ws_joint.log 2>&1 &
+PIDS+=($!)
+
+echo "[run_custom_teleop_real] jaw command bridge 시작 (/so_arm/jaw_command -> /so_arm/hw_joint_command)"
+ros2 run so_arm_motion_interface jaw_command_bridge_node \
+  --ros-args \
+  -p jaw_command_topic:=/so_arm/jaw_command \
+  -p hw_joint_command_topic:=/so_arm/hw_joint_command \
+  -p joint_name:=Jaw \
+  >/tmp/so_arm_jaw_bridge.log 2>&1 &
 PIDS+=($!)
 
 # robot_state_publisher 를 띄워 TF 제공 (joint_states -> TF)

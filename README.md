@@ -51,7 +51,7 @@ SO101_PORT=/dev/ttyACM0 CAMERA_DEVICE=/dev/video0 IMAGE_CODEC=jpeg IMAGE_ENABLE=
 - `/camera/image_raw` (sensor_msgs/Image): v4l2_camera 출력. 기본 YUYV→rgb8 640x480@30.
 - WebSocket 트랙:
   - `left_arm` → `/so_arm/pose_cmd`
-  - `robot_joint_states` → `/so_arm/hw_joint_states`
+  - `robot_joint_states` → `/so_arm/hw_joint_states` (RPi→웹), + 선택적으로 Jaw 명령(Web→RPi, `Jaw` 값만 사용)
   - `head_camera` → `/camera/image_raw` (H.264/JPEG)
 
 ## Camera 문제 시 팁

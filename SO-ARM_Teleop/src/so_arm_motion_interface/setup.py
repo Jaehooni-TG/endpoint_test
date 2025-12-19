@@ -34,6 +34,7 @@ setup(
             'z_height_joint_controller_node = so_arm_motion_interface.z_height_joint_controller_node:main',
             'so101_lerobot_bridge_node = so_arm_motion_interface.so101_lerobot_bridge_node:main',
             'initial_state_collision_guard_node = so_arm_motion_interface.initial_state_collision_guard_node:main',
+            'jaw_command_bridge_node = so_arm_motion_interface.jaw_command_bridge_node:main',
                     ],
     },
 )
