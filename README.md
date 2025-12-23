@@ -48,10 +48,11 @@ SO101_PORT=/dev/ttyACM0 CAMERA_DEVICE=/dev/video0 IMAGE_CODEC=jpeg IMAGE_ENABLE=
 - `/so_arm/pose_cmd` (PoseStamped): 웹에서 오는 EE 목표 pose. 헤더 frame_id=`base`(기본), 포지션/쿼터니언 전달.
 - `/so_arm/hw_joint_command` (JointState): 커스텀 컨트롤러가 HW 브리지로 보내는 관절 명령. name은 `Rotation, Pitch, Elbow, Wrist_Pitch, Wrist_Roll, Jaw`.
 - `/so_arm/hw_joint_states` (JointState): HW 브리지 → ROS. 위 name 순서로 현재 관절 각도/속도.
+- `/so_arm/jaw_command` (Float64): 웹에서 들어오는 Jaw **증분**(rad). 최신 Jaw 상태에 누적해서 hw_joint_command로 보냄.
 - `/camera/image_raw` (sensor_msgs/Image): v4l2_camera 출력. 기본 YUYV→rgb8 640x480@30.
 - WebSocket 트랙:
   - `left_arm` → `/so_arm/pose_cmd`
-  - `robot_joint_states` → `/so_arm/hw_joint_states` (RPi→웹), + 선택적으로 Jaw 명령(Web→RPi, `Jaw` 값만 사용)
+  - `robot_joint_states` → `/so_arm/hw_joint_states` (RPi→웹), + 선택적으로 Jaw **증분** 명령(Web→RPi, `Jaw` 값만 사용)
   - `head_camera` → `/camera/image_raw` (H.264/JPEG)
 
 ## Camera 문제 시 팁

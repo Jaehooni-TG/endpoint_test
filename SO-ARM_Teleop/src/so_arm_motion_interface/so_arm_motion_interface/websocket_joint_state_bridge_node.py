@@ -275,8 +275,8 @@ class WebsocketJointStateBridge(Node):
           self.get_logger().debug("Jaw value in joint payload is non-numeric; ignoring.")
           continue
 
-        # Log received Jaw value from WebSocket for debugging/inspection.
-        self.get_logger().info(f"Received Jaw command from WS: {jaw_val:.3f} rad")
+        # Log received Jaw delta value from WebSocket for debugging/inspection.
+        self.get_logger().info(f"Received Jaw delta from WS: {jaw_val:.3f} rad")
 
         msg = Float64()
         msg.data = jaw_val
