@@ -79,7 +79,7 @@ def generate_launch_description() -> LaunchDescription:
   # Direct joint controller (Pose → JointTrajectory)
   direct_ctrl = Node(
       package="so_arm_custom_control",
-      executable="lecabot_direct_controller_node",
+      executable="custom_direct_controller_node",
       parameters=[
           {"input_pose_topic": pose_topic},
           {"trajectory_topic": "/arm_controller/joint_trajectory"},

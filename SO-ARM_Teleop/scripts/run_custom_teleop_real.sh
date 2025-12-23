@@ -145,7 +145,7 @@ if [[ "$IMAGE_ENABLE" == "true" ]]; then
 fi
 
 echo "[run_custom_teleop_real] direct controller 시작"
-ros2 run so_arm_custom_control lecabot_direct_controller_node \
+ros2 run so_arm_custom_control custom_direct_controller_node \
   --ros-args \
   -p input_pose_topic:="$POSE_TOPIC" \
   -p trajectory_topic:="$TRAJ_TOPIC" \

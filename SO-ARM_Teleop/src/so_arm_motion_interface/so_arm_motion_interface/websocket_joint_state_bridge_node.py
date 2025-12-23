@@ -205,6 +205,8 @@ class WebsocketJointStateBridge(Node):
         payload = self._build_payload()
         if payload is not None:
           try:
+            # Debug: log exactly what we are about to send to the WebSocket.
+            self.get_logger().debug(f"WS joint send payload: {payload}")
             data = json.dumps(payload).encode("utf-8")
             await ws.send(data)
           except Exception as exc:

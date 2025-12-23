@@ -23,8 +23,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'lecabot_direct_controller_node = so_arm_custom_control.lecabot_direct_controller_node:main',
-            'custom_direct_controller_node = so_arm_custom_control.lecabot_direct_controller_node:main',
+            'custom_direct_controller_node = so_arm_custom_control.custom_direct_controller_node:main',
         ],
     },
 )
