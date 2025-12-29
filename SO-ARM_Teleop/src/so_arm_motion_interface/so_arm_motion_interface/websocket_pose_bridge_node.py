@@ -124,7 +124,7 @@ class WebsocketPoseBridge(Node):
         self.declare_parameter("publish_topic", "/so_arm/pose_cmd")
         self.declare_parameter("reference_frame", "base")
         self.declare_parameter("end_effector_frame", "gripper")
-        self.declare_parameter("ack_enabled", True)
+        self.declare_parameter("ack_enabled", False)
         self.declare_parameter("reconnect_delay", 3.0)
         self.declare_parameter("transform_quaternion", [0.5, 0.5, -0.5, -0.5])  # w, x, y, z
         # If true, treat web Z-rotation as yaw and ignore web roll/pitch

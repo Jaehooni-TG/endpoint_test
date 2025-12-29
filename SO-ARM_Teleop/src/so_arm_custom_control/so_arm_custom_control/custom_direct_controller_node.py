@@ -79,7 +79,7 @@ class LecabotDirectControllerNode(Node):
   """Direct joint controller that converts Pose → JointTrajectory."""
 
   def __init__(self) -> None:
-    super().__init__("so_arm_lecabot_direct_controller")
+    super().__init__("so_arm_custom_direct_controller")
 
     # Topics / frames
     self.declare_parameter("input_pose_topic", "/so_arm/pose_cmd")

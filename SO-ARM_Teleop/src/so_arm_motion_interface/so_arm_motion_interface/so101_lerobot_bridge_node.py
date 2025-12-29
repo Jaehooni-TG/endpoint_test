@@ -56,6 +56,8 @@ class So101LerobotBridge(Node):
         self.declare_parameter("calibration_dir", "")
         self.declare_parameter("max_relative_target", 30.0)  # unused in simple driver
         self.declare_parameter("use_degrees", True)
+        # Allow disabling gripper read/write to reduce bus load.
+        self.declare_parameter("enable_gripper", True)
         # When false, the bridge opens the serial bus but leaves torque disabled
         # so the arm can be backdriven by hand (state-only / hand-guiding).
         self.declare_parameter("enable_torque_on_connect", True)
@@ -70,6 +72,7 @@ class So101LerobotBridge(Node):
         max_rel = float(self.get_parameter("max_relative_target").value)
         use_degrees = bool(self.get_parameter("use_degrees").value)
         enable_torque = bool(self.get_parameter("enable_torque_on_connect").value)
+        self._enable_gripper = bool(self.get_parameter("enable_gripper").value)
 
         calibration_dir: Optional[Path] = Path(calib_dir_str) if calib_dir_str else None
         if not calibration_dir:
@@ -105,6 +108,8 @@ class So101LerobotBridge(Node):
             f"SO101 lerobot bridge ready | cmd: {joint_command_topic} -> port:{port} | "
             f"state: {joint_state_topic}"
         )
+        if not self._enable_gripper:
+            self.get_logger().info("Gripper control disabled (Jaw read/write skipped).")
 
     # ---- JointState commands → hardware action ----
 
@@ -117,6 +122,8 @@ class So101LerobotBridge(Node):
         # into degrees and forward them to the Feetech driver.
         joint_deg: Dict[str, float] = {}
         for name, pos in zip(msg.name, msg.position):
+            if not self._enable_gripper and name == "Jaw":
+                continue
             if name not in ORDERED_ROS_JOINTS:
                 continue
             joint_deg[name] = math.degrees(float(pos))
@@ -133,7 +140,12 @@ class So101LerobotBridge(Node):
 
     def _publish_joint_state(self) -> None:
         try:
-            joint_deg = self._arm.get_observation()
+            if self._enable_gripper:
+                joint_deg = self._arm.get_observation()
+            else:
+                joint_deg = self._arm.get_observation(
+                    include_joints=[j for j in ORDERED_ROS_JOINTS if j != "Jaw"]
+                )
         except Exception as exc:  # pragma: no cover - transport errors
             self.get_logger().warn(f"Failed to read state from Feetech arm: {exc}")
             return

@@ -16,7 +16,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Mapping
+from typing import Dict, Iterable, Mapping, Optional
 
 import serial  # type: ignore[import-not-found]
 
@@ -323,13 +323,22 @@ class So101FeetechArm:
                     exc,
                 )
 
-    def get_observation(self) -> Dict[str, float]:
-        """Read present joint angles in degrees."""
+    def get_observation(self, include_joints: Optional[Iterable[str]] = None) -> Dict[str, float]:
+        """Read present joint angles in degrees.
+
+        When include_joints is provided, only those ROS joint names are queried.
+        """
         if not self.is_connected:
             raise RuntimeError("Feetech arm is not connected")
 
         joint_deg: Dict[str, float] = {}
-        for joint_name, motor_name in self._joint_to_motor.items():
+        joint_names = (
+            list(include_joints) if include_joints is not None else list(self._joint_to_motor.keys())
+        )
+        for joint_name in joint_names:
+            motor_name = self._joint_to_motor.get(joint_name)
+            if motor_name is None:
+                continue
             if motor_name not in self._calib:
                 continue
             motor_id = self._calib[motor_name].id

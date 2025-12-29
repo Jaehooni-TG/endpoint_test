@@ -7,6 +7,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SO101_PORT=${SO101_PORT:-/dev/ttyACM0}
 SO101_ROBOT_ID=${SO101_ROBOT_ID:-go2_so101_follower_arm}
 SO101_CALIB_DIR=${SO101_CALIB_DIR:-${ROOT_DIR}/calibration/so101_follower}
+STATE_PUBLISH_RATE="${STATE_PUBLISH_RATE:-30.0}"
 
 WS_POSE_URL="${WS_POSE_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=left_arm&mode=bundle}"
 WS_JOINT_URL="${WS_JOINT_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=robot_joint_states&mode=bundle}"
@@ -31,6 +32,7 @@ EE_FRAME="${EE_FRAME:-gripper}"
 TRAJ_TOPIC="${TRAJ_TOPIC:-/arm_controller/joint_trajectory}"
 JOINT_STATE_TOPIC="${JOINT_STATE_TOPIC:-/so_arm/hw_joint_states}"
 JAW_ENABLE="${JAW_ENABLE:-true}"
+GRIPPER_ENABLE="${GRIPPER_ENABLE:-true}"
 URDF_PATH="${URDF_PATH:-${ROOT_DIR}/src/so_arm_description/urdf/so101_new_calib.urdf}"
 
 # ROS setup 스크립트가 미정의 변수를 읽을 수 있으니 잠시 nounset 해제
@@ -71,6 +73,8 @@ ros2 run so_arm_motion_interface so101_lerobot_bridge_node \
     -p port:="${SO101_PORT}" \
     -p robot_id:="${SO101_ROBOT_ID}" \
     -p calibration_dir:="${SO101_CALIB_DIR}" \
+    -p state_publish_rate:="${STATE_PUBLISH_RATE}" \
+    -p enable_gripper:="${GRIPPER_ENABLE}" \
   > /tmp/so101_hw_bridge.log 2>&1 &
 HW_BRIDGE_PID=$!
 echo "[run_custom_teleop_real] hw bridge PID=$HW_BRIDGE_PID (log: /tmp/so101_hw_bridge.log)"
