@@ -21,6 +21,7 @@ from rclpy.duration import Duration
 
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from moveit_msgs.srv import GetPositionIK
 from tf2_ros import Buffer, TransformListener
@@ -109,6 +110,8 @@ class LecabotDirectControllerNode(Node):
 
     # HW joint command topic (JointState) for direct Feetech bridge
     self.declare_parameter("hw_joint_command_topic", "/so_arm/hw_joint_command")
+    # Jaw delta command topic (Float64, radians per message)
+    self.declare_parameter("jaw_command_topic", "/so_arm/jaw_command")
 
     # Heuristic joint-space controller gains (deg / meter)
     # - forward/back (웹 x): 먼저 Pitch, 그 다음 Elbow
@@ -195,6 +198,9 @@ class LecabotDirectControllerNode(Node):
     self._hw_joint_cmd_topic = (
         self.get_parameter("hw_joint_command_topic").get_parameter_value().string_value
     )
+    jaw_command_topic = (
+        self.get_parameter("jaw_command_topic").get_parameter_value().string_value
+    )
 
     self._group_name = (
         self.get_parameter("group_name").get_parameter_value().string_value
@@ -222,11 +228,15 @@ class LecabotDirectControllerNode(Node):
         "Elbow",
         "Wrist_Pitch",
         "Wrist_Roll",
+        "Jaw",
     ]
+    self._jaw_index = self._joint_names.index("Jaw")
 
     # Last commanded / measured joint positions (rad) for smoothing
     self._last_positions: Optional[List[float]] = None
     self._current_positions: Optional[List[float]] = None
+    self._jaw_target: Optional[float] = None
+    self._warned_missing_jaw = False
 
     # Initial EE pose (for relative offset if needed)
     self._origin_position: Optional[tuple[float, float, float]] = None
@@ -240,6 +250,7 @@ class LecabotDirectControllerNode(Node):
     qos = QoSProfile(depth=10)
     self.create_subscription(PoseStamped, input_topic, self._on_pose, qos)
     self.create_subscription(JointState, joint_state_topic, self._on_joint_state, qos)
+    self.create_subscription(Float64, jaw_command_topic, self._on_jaw_command, qos)
     self._traj_pub = self.create_publisher(JointTrajectory, trajectory_topic, qos)
     self._hw_js_pub = self.create_publisher(JointState, self._hw_joint_cmd_topic, qos)
 
@@ -261,6 +272,32 @@ class LecabotDirectControllerNode(Node):
         return
       positions.append(float(name_to_pos[joint]))
     self._current_positions = positions
+
+  def _on_jaw_command(self, msg: Float64) -> None:
+    """Apply incoming Jaw delta (rad) on top of the latest command/state."""
+    delta = float(msg.data)
+    base_positions: Optional[List[float]] = None
+    if self._last_positions is not None and len(self._last_positions) == len(self._joint_names):
+      base_positions = list(self._last_positions)
+    elif self._current_positions is not None and len(self._current_positions) == len(self._joint_names):
+      base_positions = list(self._current_positions)
+
+    if base_positions is None:
+      if not self._warned_missing_jaw:
+        self.get_logger().warn(
+            "No joint state/last command yet; ignoring Jaw delta until pose updates arrive."
+        )
+        self._warned_missing_jaw = True
+      return
+
+    base_jaw = self._jaw_target if self._jaw_target is not None else base_positions[self._jaw_index]
+    target = base_jaw + delta
+    base_positions[self._jaw_index] = target
+    self._jaw_target = target
+
+    # Publish immediately so Jaw responds even without new pose commands.
+    self._last_positions = list(base_positions)
+    self._publish_trajectory(base_positions)
 
   def _on_pose(self, msg: PoseStamped) -> None:
     """Convert incoming pose to joint targets via MoveIt IK (or fallback planar IK)."""
@@ -367,6 +404,14 @@ class LecabotDirectControllerNode(Node):
     }
     target_positions: List[float] = []
     for joint in self._joint_names:
+      if joint == "Jaw":
+        jaw_default = 0.0
+        if self._current_positions is not None and len(self._current_positions) == len(self._joint_names):
+          jaw_default = self._current_positions[self._jaw_index]
+        elif self._last_positions is not None and len(self._last_positions) == len(self._joint_names):
+          jaw_default = self._last_positions[self._jaw_index]
+        target_positions.append(self._jaw_target if self._jaw_target is not None else jaw_default)
+        continue
       if joint not in name_to_pos:
         self.get_logger().warn_once(
             f"IK solution missing joint '{joint}'; using 0.0."
@@ -410,12 +455,12 @@ class LecabotDirectControllerNode(Node):
     """
 
     # 현재 관절 상태 기준으로 동작 (없으면 마지막 명령 또는 0)
-    if self._current_positions is not None:
-      pan, pitch, elbow, wrist_pitch, wrist_roll = self._current_positions
-    elif self._last_positions is not None:
-      pan, pitch, elbow, wrist_pitch, wrist_roll = self._last_positions
+    if self._current_positions is not None and len(self._current_positions) == len(self._joint_names):
+      pan, pitch, elbow, wrist_pitch, wrist_roll, jaw = self._current_positions
+    elif self._last_positions is not None and len(self._last_positions) == len(self._joint_names):
+      pan, pitch, elbow, wrist_pitch, wrist_roll, jaw = self._last_positions
     else:
-      pan = pitch = elbow = wrist_pitch = wrist_roll = 0.0
+      pan = pitch = elbow = wrist_pitch = wrist_roll = jaw = 0.0
 
     # 기준 포즈(origin) 대비 이번 명령의 변화량 계산 (EE 실제 위치 기준)
     ee_y = ee_z = None
@@ -485,7 +530,8 @@ class LecabotDirectControllerNode(Node):
         math.radians(self._wrist_roll_limit),
     )
 
-    positions = [pan, pitch, elbow, wrist_pitch, wrist_roll]
+    jaw = self._jaw_target if self._jaw_target is not None else jaw
+    positions = [pan, pitch, elbow, wrist_pitch, wrist_roll, jaw]
 
     # 기존과 동일한 joint smoothing 적용
     if self._last_positions is None:

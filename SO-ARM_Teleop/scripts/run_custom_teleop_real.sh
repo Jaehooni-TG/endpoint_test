@@ -98,20 +98,6 @@ ros2 run so_arm_motion_interface websocket_joint_state_bridge_node \
   >/tmp/so_arm_ws_joint.log 2>&1 &
 PIDS+=($!)
 
-if [[ "$JAW_ENABLE" == "true" ]]; then
-  echo "[run_custom_teleop_real] jaw command bridge 시작 (/so_arm/jaw_command -> /so_arm/hw_joint_command)"
-  ros2 run so_arm_motion_interface jaw_command_bridge_node \
-    --ros-args \
-    -p jaw_command_topic:=/so_arm/jaw_command \
-    -p jaw_state_topic:=/so_arm/hw_joint_states \
-    -p hw_joint_command_topic:=/so_arm/hw_joint_command \
-    -p joint_name:=Jaw \
-    >/tmp/so_arm_jaw_bridge.log 2>&1 &
-  PIDS+=($!)
-else
-  echo "[run_custom_teleop_real] jaw command bridge 비활성화 (JAW_ENABLE=$JAW_ENABLE)"
-fi
-
 # robot_state_publisher 를 띄워 TF 제공 (joint_states -> TF)
 echo "[run_custom_teleop_real] robot_state_publisher 시작 (urdf=$URDF_PATH, joint_states:=$JOINT_STATE_TOPIC)"
 ros2 run robot_state_publisher robot_state_publisher "$URDF_PATH" \

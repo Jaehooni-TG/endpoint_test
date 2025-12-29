@@ -42,13 +42,13 @@ SO101_PORT=/dev/ttyACM0 CAMERA_DEVICE=/dev/video0 IMAGE_CODEC=jpeg IMAGE_ENABLE=
 ## Topics/Nodes (when running)
 - Command/state: `/so_arm/pose_cmd`, `/so_arm/hw_joint_command`, `/so_arm/hw_joint_states`
 - Camera: `/camera/image_raw`
-- Nodes: `so101_lerobot_bridge_node`, `websocket_pose_bridge`, `websocket_joint_state_bridge`, `lecabot_direct_controller_node`, `v4l2_camera_node`, `websocket_image_bridge_node`, `robot_state_publisher`
+- Nodes: `so101_lerobot_bridge_node`, `websocket_pose_bridge`, `websocket_joint_state_bridge`, `custom_direct_controller_node`, `v4l2_camera_node`, `websocket_image_bridge_node`, `robot_state_publisher`
 
 ### Topic 상세
 - `/so_arm/pose_cmd` (PoseStamped): 웹에서 오는 EE 목표 pose. 헤더 frame_id=`base`(기본), 포지션/쿼터니언 전달.
 - `/so_arm/hw_joint_command` (JointState): 커스텀 컨트롤러가 HW 브리지로 보내는 관절 명령. name은 `Rotation, Pitch, Elbow, Wrist_Pitch, Wrist_Roll, Jaw`.
 - `/so_arm/hw_joint_states` (JointState): HW 브리지 → ROS. 위 name 순서로 현재 관절 각도/속도.
-- `/so_arm/jaw_command` (Float64): 웹에서 들어오는 Jaw **증분**(rad). 최신 Jaw 상태에 누적해서 hw_joint_command로 보냄.
+- `/so_arm/jaw_command` (Float64): 웹에서 들어오는 Jaw **증분**(rad). `custom_direct_controller_node`가 최신 Jaw 상태에 누적해서 `/so_arm/hw_joint_command`로 보냄.
 - `/camera/image_raw` (sensor_msgs/Image): v4l2_camera 출력. 기본 YUYV→rgb8 640x480@30.
 - WebSocket 트랙:
   - `left_arm` → `/so_arm/pose_cmd`
