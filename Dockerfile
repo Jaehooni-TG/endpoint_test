@@ -16,10 +16,12 @@ RUN apt-get update && apt-get install -y \
     python3-pil \
     python3-gi \
     gir1.2-gstreamer-1.0 \
+    gstreamer1.0-tools \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
     ros-humble-robot-state-publisher \
     ros-humble-v4l2-camera \
     ros-humble-tf2-ros \
