@@ -47,6 +47,7 @@ def generate_launch_description() -> LaunchDescription:
   pose_topic = LaunchConfiguration("pose_topic")
   reference_frame = LaunchConfiguration("reference_frame")
   ee_frame = LaunchConfiguration("end_effector_frame")
+  ignore_lateral = LaunchConfiguration("ignore_lateral")
 
   # Web pose bridge (websocket → PoseStamped)
   pose_bridge = Node(
@@ -85,6 +86,7 @@ def generate_launch_description() -> LaunchDescription:
           {"trajectory_topic": "/arm_controller/joint_trajectory"},
           {"reference_frame": reference_frame},
           {"end_effector_frame": ee_frame},
+          {"ignore_lateral": ignore_lateral},
           # --- 하드웨어 1차 테스트용 안전 파라미터 ---
           {"direction_step_m": 0.03, "direction_deadzone_m": 0.005},
           {"max_joint_step_deg": 5.0, "joint_deadband_deg": 0.02},
@@ -120,6 +122,7 @@ def generate_launch_description() -> LaunchDescription:
           DeclareLaunchArgument("pose_topic", default_value="/so_arm/pose_cmd"),
           DeclareLaunchArgument("reference_frame", default_value="base"),
           DeclareLaunchArgument("end_effector_frame", default_value="gripper"),
+          DeclareLaunchArgument("ignore_lateral", default_value="false"),
           demo_launch,
           pose_bridge,
           joint_state_bridge,

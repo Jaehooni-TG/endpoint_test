@@ -55,11 +55,9 @@ class WebsocketJointStateBridge(Node):
     self.declare_parameter("ws_ping_interval", 20.0)
     self.declare_parameter("ws_ping_timeout", 20.0)
 
-    # Optional Jaw command reception (Web → ROS).
-    # When enabled, incoming JSON payloads with {"name":[...], "position":[...]}
-    # are inspected and the value for the configured joint is published as a
-    # simple scalar command.
-    self.declare_parameter("enable_jaw_command", False)
+    # Jaw command reception (Web → ROS).
+    # Incoming JSON payloads with {"name":[...], "position":[...]} are inspected
+    # and the value for the configured joint is published as a simple scalar command.
     self.declare_parameter("jaw_joint_name", "Jaw")
     self.declare_parameter("jaw_command_topic", "/so_arm/jaw_command")
 
@@ -90,21 +88,16 @@ class WebsocketJointStateBridge(Node):
     )
 
     # Jaw command configuration
-    self._enable_jaw_command = bool(
-        self.get_parameter("enable_jaw_command").value
-    )
     self._jaw_joint_name = (
         self.get_parameter("jaw_joint_name").get_parameter_value().string_value
     )
     jaw_cmd_topic = (
         self.get_parameter("jaw_command_topic").get_parameter_value().string_value
     )
-    self._jaw_cmd_pub = None
-    if self._enable_jaw_command:
-      self._jaw_cmd_pub = self.create_publisher(Float64, jaw_cmd_topic, QoSProfile(depth=10))
-      self.get_logger().info(
-          f"Jaw command reception enabled | joint='{self._jaw_joint_name}' -> topic:{jaw_cmd_topic}"
-      )
+    self._jaw_cmd_pub = self.create_publisher(Float64, jaw_cmd_topic, QoSProfile(depth=10))
+    self.get_logger().info(
+        f"Jaw command reception enabled | joint='{self._jaw_joint_name}' -> topic:{jaw_cmd_topic}"
+    )
 
     # Joint state cache
     self._lock = Lock()
@@ -173,25 +166,18 @@ class WebsocketJointStateBridge(Node):
             self._url, ping_interval=ping_interval, ping_timeout=ping_timeout
         ) as ws:
           self.get_logger().info("WebSocket connection established.")
-          # Run send loop (RPi → Web) and optional receive loop (Web → RPi, Jaw only)
+          # Run send loop (RPi → Web) and receive loop (Web → RPi, Jaw only)
           send_task = asyncio.create_task(self._send_loop(ws))
-          recv_task = (
-              asyncio.create_task(self._recv_loop(ws))
-              if self._enable_jaw_command
-              else None
+          recv_task = asyncio.create_task(self._recv_loop(ws))
+          done, pending = await asyncio.wait(
+              {send_task, recv_task}, return_when=asyncio.FIRST_COMPLETED
           )
-          if recv_task is None:
-            await send_task
-          else:
-            done, pending = await asyncio.wait(
-                {send_task, recv_task}, return_when=asyncio.FIRST_COMPLETED
-            )
-            for task in pending:
-              task.cancel()
-              try:
-                await task
-              except asyncio.CancelledError:
-                pass
+          for task in pending:
+            task.cancel()
+            try:
+              await task
+            except asyncio.CancelledError:
+              pass
       except asyncio.CancelledError:  # pragma: no cover - loop shutdown
         break
       except Exception as exc:
@@ -223,10 +209,6 @@ class WebsocketJointStateBridge(Node):
       {"name":[...], "position":[...]}
     Only the configured jaw joint is used; other joints are ignored.
     """
-    if self._jaw_cmd_pub is None:
-      # Guard: should not happen if enable_jaw_command is False, but keep safe.
-      return
-
     try:
       async for raw_message in ws:
         # websockets delivers str for text frames, bytes for binary.

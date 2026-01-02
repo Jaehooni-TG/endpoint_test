@@ -92,6 +92,8 @@ class LecabotDirectControllerNode(Node):
     #   base_y = -web_x
     #   base_z =  web_y
     self.declare_parameter("input_is_web_axes", False)
+    # When true, ignore left/right input by locking base_x to the origin.
+    self.declare_parameter("ignore_lateral", False)
 
     # MoveIt IK configuration (기본값: 사용 안 함, 필요할 때만 켠다)
     self.declare_parameter("use_moveit_ik", False)
@@ -194,6 +196,7 @@ class LecabotDirectControllerNode(Node):
     self._direction_deadzone = float(self.get_parameter("direction_deadzone_m").value)
     self._time_horizon = max(0.02, float(self.get_parameter("time_horizon").value))
     self._input_is_web_axes = bool(self.get_parameter("input_is_web_axes").value)
+    self._ignore_lateral = bool(self.get_parameter("ignore_lateral").value)
     self._use_moveit_ik = bool(self.get_parameter("use_moveit_ik").value)
     self._hw_joint_cmd_topic = (
         self.get_parameter("hw_joint_command_topic").get_parameter_value().string_value
@@ -327,6 +330,10 @@ class LecabotDirectControllerNode(Node):
         base_x = ox + dx * self._position_gain
         base_y = oy + dy * self._position_gain
         base_z = oz + dz * self._position_gain
+
+    if self._ignore_lateral and self._origin_position is not None:
+      origin_x, _, _ = self._origin_position
+      base_x = origin_x
 
     if self._use_moveit_ik:
       self._handle_pose_with_moveit_ik(msg, base_x, base_y, base_z)

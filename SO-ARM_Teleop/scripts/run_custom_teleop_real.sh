@@ -14,7 +14,7 @@ WS_JOINT_URL="${WS_JOINT_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant
 CAMERA_DEVICE="${CAMERA_DEVICE:-/dev/video0}"
 CAMERA_WIDTH="${CAMERA_WIDTH:-640}"
 CAMERA_HEIGHT="${CAMERA_HEIGHT:-480}"
-CAMERA_FPS="${CAMERA_FPS:-30.0}"
+CAMERA_FPS="${CAMERA_FPS:-24.0}"
 CAMERA_TOPIC="${CAMERA_TOPIC:-/camera/image_raw}"
 # MJPG 인식 오류가 있을 수 있어 기본은 YUYV로 둔다.
 CAMERA_PIXEL_FORMAT="${CAMERA_PIXEL_FORMAT:-YUYV}"    # YUYV | MJPG 등 (v4l2_camera pixel_format)
@@ -23,7 +23,7 @@ CAMERA_ENCODING="${CAMERA_ENCODING:-rgb8}"            # 예: rgb8, yuv422_yuy2
 IMAGE_WS_URL="${IMAGE_WS_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=head_camera&mode=single}"
 IMAGE_CODEC="${IMAGE_CODEC:-h264}"  # h264 | jpeg
 IMAGE_PERIOD="${IMAGE_PERIOD:-0.0416667}"  # ≈24 FPS
-IMAGE_BITRATE="${IMAGE_BITRATE:-4000000}"
+IMAGE_BITRATE="${IMAGE_BITRATE:-1000000}"
 IMAGE_H264_CODEC_STRING="${IMAGE_H264_CODEC_STRING:-avc1.42E03C}"
 IMAGE_ENABLE="${IMAGE_ENABLE:-true}"
 POSE_TOPIC="${POSE_TOPIC:-/so_arm/pose_cmd}"
@@ -31,8 +31,7 @@ REF_FRAME="${REF_FRAME:-base}"
 EE_FRAME="${EE_FRAME:-gripper}"
 TRAJ_TOPIC="${TRAJ_TOPIC:-/arm_controller/joint_trajectory}"
 JOINT_STATE_TOPIC="${JOINT_STATE_TOPIC:-/so_arm/hw_joint_states}"
-JAW_ENABLE="${JAW_ENABLE:-true}"
-GRIPPER_ENABLE="${GRIPPER_ENABLE:-true}"
+IGNORE_LATERAL="${IGNORE_LATERAL:-false}"
 URDF_PATH="${URDF_PATH:-${ROOT_DIR}/src/so_arm_description/urdf/so101_new_calib.urdf}"
 
 # ROS setup 스크립트가 미정의 변수를 읽을 수 있으니 잠시 nounset 해제
@@ -74,7 +73,6 @@ ros2 run so_arm_motion_interface so101_lerobot_bridge_node \
     -p robot_id:="${SO101_ROBOT_ID}" \
     -p calibration_dir:="${SO101_CALIB_DIR}" \
     -p state_publish_rate:="${STATE_PUBLISH_RATE}" \
-    -p enable_gripper:="${GRIPPER_ENABLE}" \
   > /tmp/so101_hw_bridge.log 2>&1 &
 HW_BRIDGE_PID=$!
 echo "[run_custom_teleop_real] hw bridge PID=$HW_BRIDGE_PID (log: /tmp/so101_hw_bridge.log)"
@@ -96,7 +94,6 @@ ros2 run so_arm_motion_interface websocket_joint_state_bridge_node \
   -p websocket_url:="$WS_JOINT_URL" \
   -p publish_period:=0.1 \
   -p joint_topic:="$JOINT_STATE_TOPIC" \
-  -p enable_jaw_command:="$JAW_ENABLE" \
   -p jaw_joint_name:=Jaw \
   -p jaw_command_topic:=/so_arm/jaw_command \
   >/tmp/so_arm_ws_joint.log 2>&1 &
@@ -148,6 +145,7 @@ ros2 run so_arm_custom_control custom_direct_controller_node \
   -p joint_state_topic:="$JOINT_STATE_TOPIC" \
   -p reference_frame:="$REF_FRAME" \
   -p end_effector_frame:="$EE_FRAME" \
+  -p ignore_lateral:="$IGNORE_LATERAL" \
   -p pan_gain_deg_per_m:=120.0 \
   -p direction_step_m:=0.02 -p direction_deadzone_m:=0.01 \
   -p max_joint_step_deg:=4.0 -p joint_deadband_deg:=0.02 \
