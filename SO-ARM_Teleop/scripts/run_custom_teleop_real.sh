@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SO101_PORT=${SO101_PORT:-/dev/ttyACM0}
 SO101_ROBOT_ID=${SO101_ROBOT_ID:-go2_so101_follower_arm}
 SO101_CALIB_DIR=${SO101_CALIB_DIR:-${ROOT_DIR}/calibration/so101_follower}
-STATE_PUBLISH_RATE="${STATE_PUBLISH_RATE:-30.0}"
+STATE_PUBLISH_RATE="${STATE_PUBLISH_RATE:-20.0}"
 
 WS_POSE_URL="${WS_POSE_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=left_arm&mode=bundle}"
 WS_JOINT_URL="${WS_JOINT_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=robot_joint_states&mode=bundle}"
@@ -16,6 +16,8 @@ CAMERA_WIDTH="${CAMERA_WIDTH:-640}"
 CAMERA_HEIGHT="${CAMERA_HEIGHT:-480}"
 CAMERA_FPS="${CAMERA_FPS:-24.0}"
 CAMERA_TOPIC="${CAMERA_TOPIC:-/camera/image_raw}"
+# Docker 환경에서 mmap 문제가 있으면 read로 우회 가능.
+CAMERA_IO_METHOD="${CAMERA_IO_METHOD:-read}"  # read | mmap | userptr
 # MJPG 인식 오류가 있을 수 있어 기본은 YUYV로 둔다.
 CAMERA_PIXEL_FORMAT="${CAMERA_PIXEL_FORMAT:-YUYV}"    # YUYV | MJPG 등 (v4l2_camera pixel_format)
 # 브리지와 호환성 위해 기본 출력은 rgb8.
@@ -112,6 +114,7 @@ if [[ "$IMAGE_ENABLE" == "true" ]]; then
   ros2 run v4l2_camera v4l2_camera_node \
     --ros-args \
     -p video_device:="$CAMERA_DEVICE" \
+    -p io_method:="$CAMERA_IO_METHOD" \
     -p image_size:="[$CAMERA_WIDTH,$CAMERA_HEIGHT]" \
     -p frame_rate:="$CAMERA_FPS" \
     -p pixel_format:="$CAMERA_PIXEL_FORMAT" \
