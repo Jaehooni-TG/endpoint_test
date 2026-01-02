@@ -38,17 +38,8 @@ except ImportError as exc:  # pragma: no cover - dependency check
       "or 'python3 -m pip install pillow')."
   ) from exc
 
-try:
-  import gi
-
-  gi.require_version("Gst", "1.0")
-  from gi.repository import Gst  # type: ignore[import-not-found]
-
-  Gst.init(None)
-  GST_AVAILABLE = True
-except Exception:
-  Gst = None  # type: ignore[assignment]
-  GST_AVAILABLE = False
+Gst = None  # type: ignore[assignment]
+GST_AVAILABLE = False
 
 
 class H264GstEncoder:
@@ -60,12 +51,23 @@ class H264GstEncoder:
   """
 
   def __init__(self, width: int, height: int, fps: float, bitrate_bits: int) -> None:
-    if not GST_AVAILABLE:  # pragma: no cover - runtime guard
-      raise RuntimeError(
-          "GStreamer Python bindings are not available. Please install "
-          "'python3-gi' and 'gir1.2-gst-1.0', e.g.:\n"
-          "  sudo apt install python3-gi gir1.2-gst-1.0"
-      )
+    global Gst, GST_AVAILABLE
+    if not GST_AVAILABLE:
+      try:
+        import gi
+
+        gi.require_version("Gst", "1.0")
+        from gi.repository import Gst as GstModule  # type: ignore[import-not-found]
+
+        GstModule.init(None)
+        Gst = GstModule
+        GST_AVAILABLE = True
+      except Exception as exc:  # pragma: no cover - runtime guard
+        raise RuntimeError(
+            "GStreamer Python bindings are not available. Please install "
+            "'python3-gi' and 'gir1.2-gst-1.0', e.g.:\n"
+            "  sudo apt install python3-gi gir1.2-gst-1.0"
+        ) from exc
 
     self._width = int(width)
     self._height = int(height)
