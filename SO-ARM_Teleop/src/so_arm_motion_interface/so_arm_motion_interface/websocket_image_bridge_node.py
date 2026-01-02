@@ -228,6 +228,7 @@ class WebsocketImageBridge(Node):
     self._h264_encoder: Optional[H264GstEncoder] = None
     self._enc_width: Optional[int] = None
     self._enc_height: Optional[int] = None
+    self._warned_missing_gst = False
     # Derive nominal FPS from publish period
     self._fps = max(1.0, 1.0 / self._period) if self._period > 0 else 30.0
     # Stream header state (for H.264)
@@ -320,16 +321,18 @@ class WebsocketImageBridge(Node):
 
   def _encode_h264(self, bgr_image: "np.ndarray") -> Optional[bytes]:
     """Encode a single frame as H.264 using in-process GStreamer."""
-    if not GST_AVAILABLE:
-      self.get_logger().error(
-          "GStreamer (python3-gi / gir1.2-gst-1.0) is not available; "
-          "set codec:=jpeg or install the GStreamer bindings."
-      )
-      return None
-
     h, w = bgr_image.shape[:2]
     if self._h264_encoder is None:
-      self._h264_encoder = H264GstEncoder(w, h, self._fps, self._bitrate)
+      try:
+        self._h264_encoder = H264GstEncoder(w, h, self._fps, self._bitrate)
+      except Exception:
+        if not self._warned_missing_gst:
+          self.get_logger().error(
+              "GStreamer (python3-gi / gir1.2-gst-1.0) is not available; "
+              "set codec:=jpeg or install the GStreamer bindings."
+          )
+          self._warned_missing_gst = True
+        return None
       self._enc_width = w
       self._enc_height = h
 
