@@ -22,8 +22,11 @@ CAMERA_IO_METHOD="${CAMERA_IO_METHOD:-read}"  # read | mmap | userptr
 CAMERA_PIXEL_FORMAT="${CAMERA_PIXEL_FORMAT:-YUYV}"    # YUYV | MJPG 등 (v4l2_camera pixel_format)
 # 브리지와 호환성 위해 기본 출력은 rgb8.
 CAMERA_ENCODING="${CAMERA_ENCODING:-rgb8}"            # 예: rgb8, yuv422_yuy2
+CAMERA_WARMUP_SEC="${CAMERA_WARMUP_SEC:-1.0}"
+CAMERA_WAIT_PUBLISH="${CAMERA_WAIT_PUBLISH:-true}"
+CAMERA_WAIT_RETRIES="${CAMERA_WAIT_RETRIES:-40}"
 IMAGE_WS_URL="${IMAGE_WS_URL:-ws://cobot.center:8286/pang/ws/pub?channel=instant&name=so101&track=head_camera&mode=single}"
-IMAGE_CODEC="${IMAGE_CODEC:-h264}"  # h264 | jpeg
+IMAGE_CODEC="${IMAGE_CODEC:-h264}"  # h264 only
 IMAGE_PERIOD="${IMAGE_PERIOD:-0.0416667}"  # ≈24 FPS
 IMAGE_BITRATE="${IMAGE_BITRATE:-1000000}"
 IMAGE_H264_CODEC_STRING="${IMAGE_H264_CODEC_STRING:-avc1.42E03C}"
@@ -47,6 +50,42 @@ RSP_PID=""
 CAM_PID=""
 IMG_BRIDGE_PID=""
 PIDS=()
+
+wait_for_topic_publishers() {
+  local topic="$1"
+  local retries="${2:-40}"
+  local i count
+  for ((i = 0; i < retries; i++)); do
+    count="$(ros2 topic info "$topic" 2>/dev/null | awk -F': ' '/Publisher count/ {print $2}' || true)"
+    if [[ -n "${count}" && "${count}" -gt 0 ]]; then
+      return 0
+    fi
+    sleep 0.25
+  done
+  return 1
+}
+
+gstreamer_h264_ready() {
+  if ! command -v gst-inspect-1.0 >/dev/null 2>&1; then
+    return 1
+  fi
+  if ! gst-inspect-1.0 x264enc >/dev/null 2>&1; then
+    return 1
+  fi
+  if ! gst-inspect-1.0 h264parse >/dev/null 2>&1; then
+    return 1
+  fi
+  if ! python3 - <<'PY' >/dev/null 2>&1
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
+Gst.init(None)
+PY
+  then
+    return 1
+  fi
+  return 0
+}
 
 cleanup() {
   echo "[run_custom_teleop_real] Shutting down..."
@@ -110,6 +149,15 @@ RSP_PID=$!
 
 # 카메라 퍼블리시 (v4l2) + WebSocket 전송
 if [[ "$IMAGE_ENABLE" == "true" ]]; then
+  if [[ "$IMAGE_CODEC" != "h264" ]]; then
+    echo "[run_custom_teleop_real] IMAGE_CODEC는 h264만 지원합니다."
+    exit 1
+  fi
+  if ! gstreamer_h264_ready; then
+    echo "[run_custom_teleop_real] GStreamer(H264) 미확인 → 종료"
+    exit 1
+  fi
+
   echo "[run_custom_teleop_real] camera node 시작: $CAMERA_DEVICE -> $CAMERA_TOPIC (${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS})"
   ros2 run v4l2_camera v4l2_camera_node \
     --ros-args \
@@ -123,6 +171,17 @@ if [[ "$IMAGE_ENABLE" == "true" ]]; then
     --remap camera_info:="/camera_info" \
     >/tmp/so_arm_cam.log 2>&1 &
   CAM_PID=$!
+
+  if [[ "$CAMERA_WARMUP_SEC" != "0" ]]; then
+    sleep "$CAMERA_WARMUP_SEC"
+  fi
+  if [[ "$CAMERA_WAIT_PUBLISH" == "true" ]]; then
+    if wait_for_topic_publishers "$CAMERA_TOPIC" "$CAMERA_WAIT_RETRIES"; then
+      echo "[run_custom_teleop_real] camera topic publish 확인됨: $CAMERA_TOPIC"
+    else
+      echo "[run_custom_teleop_real] camera topic publish 미확인: $CAMERA_TOPIC"
+    fi
+  fi
 
   echo "[run_custom_teleop_real] image bridge 시작: $CAMERA_TOPIC -> $IMAGE_WS_URL (codec=$IMAGE_CODEC)"
   ros2 run so_arm_motion_interface websocket_image_bridge_node \

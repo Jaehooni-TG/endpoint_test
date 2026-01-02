@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bridge camera images from ROS 2 to a WebSocket stream.
 
-Subscribes to a sensor_msgs/Image topic, JPEG-compresses the latest frame and
+Subscribes to a sensor_msgs/Image topic, H.264-encodes the latest frame and
 sends it as a binary WebSocket message at a configurable rate.
 
 Default WebSocket URL matches the user's head camera track:
@@ -160,9 +160,8 @@ class WebsocketImageBridge(Node):
     # WebSocket keepalive settings (set interval<=0 to disable pings)
     self.declare_parameter("ws_ping_interval", 20.0)
     self.declare_parameter("ws_ping_timeout", 20.0)
-    # Encoding settings
-    self.declare_parameter("codec", "h264")  # jpeg | h264
-    self.declare_parameter("jpeg_quality", 70)  # 0–100
+    # Encoding settings (H.264 only)
+    self.declare_parameter("codec", "h264")
     # Target resolution; if >0, frames are resized to fit within this box.
     self.declare_parameter("max_width", 1280)
     self.declare_parameter("max_height", 720)
@@ -198,14 +197,9 @@ class WebsocketImageBridge(Node):
         .strip()
         .lower()
     )
-    if codec_param not in ("jpeg", "h264"):
-      self.get_logger().warn(
-          f"Unsupported codec '{codec_param}', falling back to 'jpeg'."
-      )
-      codec_param = "jpeg"
-    self._codec = codec_param
-    self._jpeg_quality = int(self.get_parameter("jpeg_quality").value)
-    self._jpeg_quality = max(1, min(self._jpeg_quality, 100))
+    if codec_param != "h264":
+      raise ValueError("Only H.264 is supported (codec must be 'h264').")
+    self._codec = "h264"
     self._max_width = int(self.get_parameter("max_width").value)
     self._max_height = int(self.get_parameter("max_height").value)
     if self._max_width < 0:
@@ -250,7 +244,7 @@ class WebsocketImageBridge(Node):
     self.get_logger().info(
         "WebSocket image bridge started | "
         f"url: {self._url} | topic: {image_topic} | "
-        f"codec={self._codec}, jpeg_quality={self._jpeg_quality}, "
+        f"codec={self._codec}, "
         f"max_size=({self._max_width}x{self._max_height}), fps≈{self._fps:.1f}, "
         f"bitrate≈{self._bitrate}"
     )
@@ -308,17 +302,6 @@ class WebsocketImageBridge(Node):
 
     return image
 
-  def _encode_jpeg(self, pil_image: "PILImage.Image") -> Optional[bytes]:
-    try:
-      import io
-
-      buf = io.BytesIO()
-      pil_image.save(buf, format="JPEG", quality=int(self._jpeg_quality))
-      return buf.getvalue()
-    except Exception as exc:
-      self.get_logger().warn(f"Failed to JPEG-encode image frame: {exc}")
-      return None
-
   def _encode_h264(self, bgr_image: "np.ndarray") -> Optional[bytes]:
     """Encode a single frame as H.264 using in-process GStreamer."""
     h, w = bgr_image.shape[:2]
@@ -329,7 +312,7 @@ class WebsocketImageBridge(Node):
         if not self._warned_missing_gst:
           self.get_logger().error(
               "GStreamer (python3-gi / gir1.2-gst-1.0) is not available; "
-              "set codec:=jpeg or install the GStreamer bindings."
+              "install the GStreamer bindings."
           )
           self._warned_missing_gst = True
         return None
@@ -345,15 +328,13 @@ class WebsocketImageBridge(Node):
     if pil_image is None:
       return None
 
-    if self._codec == "h264":
-      rgb = np.asarray(pil_image)
-      if rgb.ndim != 3 or rgb.shape[2] != 3:
-        self.get_logger().warn("Unexpected image shape for H.264 encoding.")
-        return None
-      # Our helper currently expects BGR input, so flip channels.
-      bgr = rgb[..., ::-1].copy()
-      return self._encode_h264(bgr)
-    return self._encode_jpeg(pil_image)
+    rgb = np.asarray(pil_image)
+    if rgb.ndim != 3 or rgb.shape[2] != 3:
+      self.get_logger().warn("Unexpected image shape for H.264 encoding.")
+      return None
+    # Our helper currently expects BGR input, so flip channels.
+    bgr = rgb[..., ::-1].copy()
+    return self._encode_h264(bgr)
 
   def _run_loop(self) -> None:
     self._loop = asyncio.new_event_loop()
@@ -401,7 +382,7 @@ class WebsocketImageBridge(Node):
             # For H.264, send a one-time text header describing the stream
             # before the first binary frame so the web client can configure
             # its decoder.
-            if self._codec == "h264" and not self._header_sent:
+            if not self._header_sent:
               width = self._enc_width
               height = self._enc_height
               if width and height:
